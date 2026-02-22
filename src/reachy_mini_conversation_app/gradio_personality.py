@@ -88,20 +88,20 @@ class PersonalityUI:
         current_value = config.REACHY_MINI_CUSTOM_PROFILE or self.DEFAULT_OPTION
 
         self.personalities_dropdown = gr.Dropdown(
-            label="Select personality",
+            label="🎭 Reachy's Mood",
             choices=[self.DEFAULT_OPTION, *(self._list_personalities())],
             value=current_value,
         )
-        self.apply_btn = gr.Button("Apply personality")
+        self.apply_btn = gr.Button("✨ Apply Mood", variant="primary")
         self.status_md = gr.Markdown(visible=True)
         self.preview_md = gr.Markdown(value=self._read_instructions_for(current_value))
-        self.person_name_tb = gr.Textbox(label="Personality name")
-        self.person_instr_ta = gr.TextArea(label="Personality instructions", lines=10)
-        self.tools_txt_ta = gr.TextArea(label="tools.txt", lines=10)
-        self.voice_dropdown = gr.Dropdown(label="Voice", choices=["cedar"], value="cedar")
-        self.new_personality_btn = gr.Button("New personality")
-        self.available_tools_cg = gr.CheckboxGroup(label="Available tools (helper)", choices=[], value=[])
-        self.save_btn = gr.Button("Save personality (instructions + tools)")
+        self.person_name_tb = gr.Textbox(label="🏷️ Personality name")
+        self.person_instr_ta = gr.TextArea(label="📝 Personality instructions", lines=10)
+        self.tools_txt_ta = gr.TextArea(label="🔧 tools.txt", lines=10)
+        self.voice_dropdown = gr.Dropdown(label="🎙️ Voice", choices=["cedar"], value="cedar")
+        self.new_personality_btn = gr.Button("＋ New Personality")
+        self.available_tools_cg = gr.CheckboxGroup(label="🛠️ Available tools", choices=[], value=[])
+        self.save_btn = gr.Button("💾 Save Personality")
 
     def additional_inputs_ordered(self) -> list[Any]:
         """Return the additional inputs in the expected order for Stream."""

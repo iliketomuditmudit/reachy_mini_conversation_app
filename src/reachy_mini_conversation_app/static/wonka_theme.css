@@ -1,0 +1,374 @@
+/* ============================================================
+   The Idea Capsule Machine — Willy Wonka Theme
+   Injected into the fastrtc Stream gr.Blocks UI
+   ============================================================ */
+
+/* ── Google Font ── */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap');
+
+/* ── CSS Variables ── */
+:root {
+  --wonka-bg:         #12002e;
+  --wonka-surface:    #1e0045;
+  --wonka-surface2:   #2a005e;
+  --wonka-pink:       #ff3d9a;
+  --wonka-pink-glow:  rgba(255, 61, 154, 0.45);
+  --wonka-gold:       #ffd700;
+  --wonka-gold-soft:  #ffe566;
+  --wonka-mint:       #7fffd4;
+  --wonka-mint-soft:  rgba(127, 255, 212, 0.15);
+  --wonka-purple:     #c084fc;
+  --wonka-border:     rgba(255, 215, 0, 0.25);
+  --wonka-text:       #f5e6ff;
+  --wonka-muted:      #c4a0e0;
+  --wonka-radius:     20px;
+  --wonka-radius-sm:  12px;
+}
+
+/* ── Root & Body ── */
+body,
+.gradio-container,
+#root {
+  background: var(--wonka-bg) !important;
+  font-family: 'Nunito', 'Poppins', 'Segoe UI', sans-serif !important;
+  color: var(--wonka-text) !important;
+}
+
+/* ── Remove default Gradio white backgrounds ── */
+.gradio-container > .main,
+.gradio-container .wrap,
+.contain,
+footer {
+  background: transparent !important;
+}
+
+/* ── Header / Title area ── */
+#wonka-header {
+  text-align: center;
+  padding: 28px 16px 8px;
+  background: transparent;
+}
+
+#wonka-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--wonka-gold) 0%, var(--wonka-pink) 50%, var(--wonka-mint) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 6px;
+  text-shadow: none;
+  line-height: 1.1;
+}
+
+#wonka-subtitle {
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--wonka-muted);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+/* ── Gradio-generated h1 title override (fastrtc injects this) ── */
+h1, .gr-prose h1 {
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 900 !important;
+  font-size: clamp(1.8rem, 4vw, 2.8rem) !important;
+  background: linear-gradient(135deg, var(--wonka-gold) 0%, var(--wonka-pink) 50%, var(--wonka-mint) 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  text-align: center !important;
+}
+
+/* ── Sidebar ── */
+.sidebar,
+.gradio-container .sidebar {
+  background: var(--wonka-surface) !important;
+  border-right: 1px solid var(--wonka-border) !important;
+  border-radius: 0 var(--wonka-radius) var(--wonka-radius) 0 !important;
+  box-shadow: 4px 0 24px rgba(192, 132, 252, 0.1) !important;
+}
+
+/* ── Panels / Blocks / Groups ── */
+.gr-block,
+.gr-box,
+.block,
+.panel,
+.gr-panel {
+  background: var(--wonka-surface) !important;
+  border: 1px solid var(--wonka-border) !important;
+  border-radius: var(--wonka-radius) !important;
+}
+
+/* ── Labels ── */
+label span,
+.gr-block label span,
+.label-wrap span {
+  color: var(--wonka-muted) !important;
+  font-family: 'Nunito', sans-serif !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+/* ── Inputs: Textbox, Textarea, Dropdown ── */
+input[type="text"],
+input[type="password"],
+textarea,
+.gr-text-input,
+.gr-textarea,
+select,
+.wrap-inner {
+  background: var(--wonka-surface2) !important;
+  border: 1px solid var(--wonka-border) !important;
+  border-radius: var(--wonka-radius-sm) !important;
+  color: var(--wonka-text) !important;
+  font-family: 'Nunito', sans-serif !important;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+  border-color: var(--wonka-pink) !important;
+  box-shadow: 0 0 0 3px var(--wonka-pink-glow) !important;
+  outline: none !important;
+}
+
+/* ── Dropdown ── */
+.gr-dropdown ul,
+ul.options {
+  background: var(--wonka-surface2) !important;
+  border: 1px solid var(--wonka-border) !important;
+  border-radius: var(--wonka-radius-sm) !important;
+}
+
+.gr-dropdown li:hover,
+ul.options li:hover {
+  background: var(--wonka-pink) !important;
+  color: #fff !important;
+}
+
+/* ── Buttons ── */
+button,
+.gr-button {
+  font-family: 'Nunito', sans-serif !important;
+  font-weight: 700 !important;
+  border-radius: 50px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+/* Primary buttons (Apply, Save) */
+button.primary,
+.gr-button-primary,
+button[data-testid*="apply"],
+button[data-testid*="save"] {
+  background: linear-gradient(135deg, var(--wonka-pink), #c720e8) !important;
+  border: none !important;
+  color: #fff !important;
+  box-shadow: 0 4px 18px var(--wonka-pink-glow) !important;
+}
+
+button.primary:hover,
+.gr-button-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 28px var(--wonka-pink-glow) !important;
+}
+
+/* Secondary buttons */
+button.secondary,
+.gr-button-secondary {
+  background: var(--wonka-surface2) !important;
+  border: 1px solid var(--wonka-border) !important;
+  color: var(--wonka-gold) !important;
+}
+
+button.secondary:hover,
+.gr-button-secondary:hover {
+  border-color: var(--wonka-gold) !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25) !important;
+}
+
+/* ── WebRTC Record/Stop button (the big round mic button) ── */
+/* fastrtc renders this as a circular button element */
+.webrtc-container button,
+[class*="webrtc"] button,
+button[aria-label*="record" i],
+button[aria-label*="start" i],
+button[aria-label*="stop" i],
+.record-button,
+#record-btn {
+  background: radial-gradient(circle at 35% 35%, #ff6eb5, var(--wonka-pink)) !important;
+  border: 3px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow:
+    0 0 0 6px rgba(255, 61, 154, 0.2),
+    0 8px 32px rgba(255, 61, 154, 0.5) !important;
+  color: #fff !important;
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  animation: none !important;
+}
+
+/* Pulse on hover */
+.webrtc-container button:hover,
+[class*="webrtc"] button:hover {
+  animation: wonka-pulse 1.2s ease-in-out infinite !important;
+  transform: scale(1.04) !important;
+}
+
+@keyframes wonka-pulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(255,61,154,0.2), 0 8px 32px rgba(255,61,154,0.5); }
+  50%       { box-shadow: 0 0 0 14px rgba(255,61,154,0.08), 0 12px 48px rgba(255,61,154,0.7); }
+}
+
+/* ── Chatbot ── */
+.chatbot,
+[data-testid="chatbot"],
+.gr-chatbot {
+  background: var(--wonka-surface) !important;
+  border: 1px solid var(--wonka-border) !important;
+  border-radius: var(--wonka-radius) !important;
+}
+
+/* Chatbot message bubbles — Reachy (bot = right / left depending on layout) */
+.message.bot .bubble-wrap .prose,
+.message.bot,
+[data-testid="bot"] .prose {
+  background: linear-gradient(135deg, #1a4d3e, #0d3530) !important;
+  color: var(--wonka-mint) !important;
+  border-radius: 18px 18px 18px 4px !important;
+  border: 1px solid rgba(127, 255, 212, 0.25) !important;
+  box-shadow: 0 2px 12px rgba(127, 255, 212, 0.1) !important;
+}
+
+/* Chatbot message bubbles — User */
+.message.user .bubble-wrap .prose,
+.message.user,
+[data-testid="user"] .prose {
+  background: linear-gradient(135deg, #5c003d, #3d0028) !important;
+  color: #ffb3d9 !important;
+  border-radius: 18px 18px 4px 18px !important;
+  border: 1px solid rgba(255, 61, 154, 0.3) !important;
+  box-shadow: 0 2px 12px rgba(255, 61, 154, 0.12) !important;
+}
+
+/* Remove default avatars / make them capsule-sized */
+.message .avatar-container img {
+  border-radius: 50% !important;
+  border: 2px solid var(--wonka-gold) !important;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4) !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* ── Camera / WebRTC stream area ── */
+.webrtc-container,
+[class*="webrtc-stream"],
+.video-container {
+  border-radius: var(--wonka-radius) !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+  box-shadow:
+    0 0 0 2px var(--wonka-pink),
+    0 0 28px var(--wonka-pink-glow),
+    0 0 56px rgba(255, 215, 0, 0.12) !important;
+  overflow: hidden !important;
+}
+
+/* "Reachy's Eyes" label — applied via CSS on the label below camera */
+.webrtc-label,
+.video-label {
+  font-style: italic !important;
+  font-size: 0.78rem !important;
+  color: var(--wonka-muted) !important;
+  text-align: center !important;
+  margin-top: 6px !important;
+}
+
+/* ── Accordion / Collapsible (Settings) ── */
+.gr-accordion,
+details,
+.accordion {
+  background: var(--wonka-surface) !important;
+  border: 1px solid var(--wonka-border) !important;
+  border-radius: var(--wonka-radius-sm) !important;
+}
+
+.gr-accordion summary,
+details summary {
+  color: var(--wonka-gold) !important;
+  font-weight: 700 !important;
+  font-family: 'Nunito', sans-serif !important;
+}
+
+/* ── Checkbox group ── */
+.gr-check-radio input[type="checkbox"]:checked + span,
+input[type="checkbox"]:checked {
+  accent-color: var(--wonka-pink) !important;
+}
+
+/* ── Markdown text ── */
+.gr-markdown,
+.prose,
+.md {
+  color: var(--wonka-text) !important;
+  font-family: 'Nunito', sans-serif !important;
+}
+
+.gr-markdown a,
+.prose a {
+  color: var(--wonka-gold) !important;
+  text-decoration: underline dotted !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: var(--wonka-bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--wonka-purple);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--wonka-pink); }
+
+/* ── Footer — de-emphasize ── */
+footer,
+.footer,
+.built-with {
+  opacity: 0.18 !important;
+  font-size: 0.65rem !important;
+  filter: grayscale(1) !important;
+}
+
+/* ── Personality dropdown label override ── */
+/* Target the label of the first dropdown in sidebar */
+.sidebar label span:first-of-type {
+  color: var(--wonka-gold-soft) !important;
+}
+
+/* ── Status markdown ── */
+.status-message,
+[data-testid="markdown"] {
+  color: var(--wonka-mint) !important;
+  font-style: italic !important;
+}
+
+/* ── Glow divider ── */
+hr {
+  border: none !important;
+  border-top: 1px solid var(--wonka-border) !important;
+  margin: 16px 0 !important;
+}
+
+/* ── Responsive tweaks ── */
+@media (max-width: 768px) {
+  #wonka-title { font-size: 1.8rem; }
+  #wonka-subtitle { font-size: 0.85rem; }
+}

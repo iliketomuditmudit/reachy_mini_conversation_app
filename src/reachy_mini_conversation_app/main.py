@@ -132,8 +132,9 @@ def run(
 
     if args.gradio:
         api_key_textbox = gr.Textbox(
-            label="OPENAI API Key",
+            label="⚙️ OpenAI API Key",
             type="password",
+            placeholder="sk-... (paste your key here)",
             value=os.getenv("OPENAI_API_KEY") if not get_space() else "",
         )
 
@@ -141,6 +142,19 @@ def run(
 
         personality_ui = PersonalityUI()
         personality_ui.create_components()
+
+        # ── Wonka theme: styled HTML title passed directly to fastrtc ──
+        wonka_title_html = (
+            "<div id='wonka-header'>"
+            "<h1 id='wonka-title'>✨ The Idea Capsule Machine ✨</h1>"
+            "<p id='wonka-subtitle'>Pick a ball. Open it. See what's inside you.</p>"
+            "</div>"
+        )
+
+        # ── Load the custom CSS from static/wonka_theme.css ──
+        _css_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "wonka_theme.css")
+        with open(_css_path, "r") as _f:
+            _wonka_css = _f.read()
 
         stream = Stream(
             handler=handler,
@@ -153,8 +167,16 @@ def run(
             ],
             additional_outputs=[chatbot],
             additional_outputs_handler=update_chatbot,
-            ui_args={"title": "Talk with Reachy Mini"},
+            ui_args={
+                "title": wonka_title_html,
+                "icon_button_color": "#ff3d9a",
+                "pulse_color": "rgba(255, 61, 154, 0.6)",
+            },
         )
+
+        # ── Inject Wonka CSS on top of fastrtc's generated Blocks CSS ──
+        stream.ui.css = (stream.ui.css or "") + "\n" + _wonka_css
+
         stream_manager = stream.ui
         if not settings_app:
             app = FastAPI()
