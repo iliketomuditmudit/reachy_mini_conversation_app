@@ -1,0 +1,65 @@
+"""Standalone server for TV display - runs independently from Gradio."""
+
+import asyncio
+import uvicorn
+from fastapi import FastAPI, WebSocket, Request
+from fastapi.responses import FileResponse
+from pathlib import Path
+import logging
+
+# Create a local broadcaster for this server
+import sys
+sys.path.insert(0, str(Path(__file__).parent / "src"))
+from reachy_mini_conversation_app.tv_broadcaster import TVDisplayBroadcaster
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
+
+# Create a local broadcaster instance for this server
+tv_broadcaster = TVDisplayBroadcaster()
+
+@app.get("/")
+async def serve_tv_display():
+    """Serve the TV display HTML file."""
+    tv_display_path = Path(__file__).parent / "tv_display.html"
+    if tv_display_path.exists():
+        logger.info(f"Serving TV display from: {tv_display_path}")
+        return FileResponse(tv_display_path)
+    else:
+        return {"error": "TV display file not found"}
+
+@app.post("/broadcast")
+async def broadcast_event(request: Request):
+    """Receive broadcast events from main app and forward to WebSocket clients."""
+    data = await request.json()
+    event_type = data.get("type")
+    event_data = data.get("data", {})
+
+    logger.info(f"Broadcasting event: {event_type}")
+    await tv_broadcaster.broadcast(event_type, event_data)
+
+    return {"status": "ok"}
+
+@app.websocket("/tv-display")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for TV display connections."""
+    await tv_broadcaster.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            logger.debug(f"Received from TV display: {data}")
+    except Exception as e:
+        logger.debug(f"TV display WebSocket closed: {e}")
+    finally:
+        await tv_broadcaster.disconnect(websocket)
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("🎪 TV Display Server Starting")
+    print("=" * 60)
+    print("Open in your browser: http://localhost:8001")
+    print("WebSocket will connect to: ws://localhost:8001/tv-display")
+    print("=" * 60)
+    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="info")

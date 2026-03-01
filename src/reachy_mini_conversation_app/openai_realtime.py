@@ -23,12 +23,23 @@ from reachy_mini_conversation_app.tools.core_tools import (
     get_tool_specs,
     dispatch_tool_call,
 )
+import httpx
 
 
 logger = logging.getLogger(__name__)
 
 OPEN_AI_INPUT_SAMPLE_RATE: Final[Literal[24000]] = 24000
 OPEN_AI_OUTPUT_SAMPLE_RATE: Final[Literal[24000]] = 24000
+TV_SERVER_URL = "http://localhost:8001/broadcast"
+
+
+async def broadcast_to_tv(event_type: str, data: dict) -> None:
+    """Send event to TV display server via HTTP."""
+    try:
+        async with httpx.AsyncClient(timeout=1.0) as client:
+            await client.post(TV_SERVER_URL, json={"type": event_type, "data": data})
+    except Exception as e:
+        logger.debug(f"TV broadcast failed (TV server may not be running): {e}")
 
 
 class OpenaiRealtimeHandler(AsyncStreamHandler):
@@ -275,6 +286,9 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
 
             logger.info("Realtime session updated successfully")
 
+            # Broadcast idle state to TV display on session start
+            await broadcast_to_tv("idle", {})
+
             # Manage event received from the openai server
             self.connection = conn
             try:
@@ -345,10 +359,22 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
 
                     await self.output_queue.put(AdditionalOutputs({"role": "user", "content": event.transcript}))
 
+                    # Broadcast to TV display
+                    await broadcast_to_tv("conversation", {
+                        "message": event.transcript,
+                        "speaker": "user"
+                    })
+
                 # Handle assistant transcription
                 if event.type in ("response.audio_transcript.done", "response.output_audio_transcript.done"):
                     logger.debug(f"Assistant transcript: {event.transcript}")
                     await self.output_queue.put(AdditionalOutputs({"role": "assistant", "content": event.transcript}))
+
+                    # Broadcast to TV display
+                    await broadcast_to_tv("conversation", {
+                        "message": event.transcript,
+                        "speaker": "robot"
+                    })
 
                 # Handle audio delta
                 if event.type in ("response.audio.delta", "response.output_audio.delta"):
@@ -372,6 +398,10 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                     if not isinstance(tool_name, str) or not isinstance(args_json_str, str):
                         logger.error("Invalid tool call: tool_name=%s, args=%s", tool_name, args_json_str)
                         continue
+
+                    # Broadcast generating state for image generation
+                    if tool_name == "generate_image":
+                        await broadcast_to_tv("generating", {})
 
                     try:
                         tool_result = await dispatch_tool_call(tool_name, args_json_str, self.deps)
@@ -438,6 +468,20 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                                     },
                                 ),
                             )
+
+                    if tool_name == "generate_image" and tool_result.get("status") == "generated":
+                        image_source = tool_result.get("saved_path") or tool_result.get("image_url")
+                        if image_source:
+                            img = gr.Image(value=image_source)
+                            await self.output_queue.put(
+                                AdditionalOutputs({"role": "assistant", "content": img})
+                            )
+
+                            # Broadcast reveal state to TV display
+                            await broadcast_to_tv("reveal", {
+                                "imageUrl": image_source,
+                                "userName": None  # Could extract from conversation if available
+                            })
 
                     # if this tool call was triggered by an idle signal, don't make the robot speak
                     # for other tool calls, let the robot reply out loud

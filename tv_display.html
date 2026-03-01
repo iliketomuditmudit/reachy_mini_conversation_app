@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Idea Capsule Machine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --deep-purple: #4a148c;
+            --magenta: #880e4f;
+            --hot-pink: #ff006e;
+            --gold: #ffd60a;
+            --mint: #06ffa5;
+            --lavender: #b388ff;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--magenta) 100%);
+        }
+
+        /* Candy stripe border */
+        .candy-border {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .candy-border.top,
+        .candy-border.bottom {
+            width: 100%;
+            height: 20px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--hot-pink),
+                var(--hot-pink) 20px,
+                var(--gold) 20px,
+                var(--gold) 40px,
+                var(--mint) 40px,
+                var(--mint) 60px
+            );
+        }
+
+        .candy-border.top { top: 0; left: 0; }
+        .candy-border.bottom { bottom: 0; left: 0; }
+
+        .candy-border.left,
+        .candy-border.right {
+            width: 20px;
+            height: 100%;
+            background: repeating-linear-gradient(
+                135deg,
+                var(--hot-pink),
+                var(--hot-pink) 20px,
+                var(--gold) 20px,
+                var(--gold) 40px,
+                var(--mint) 40px,
+                var(--mint) 60px
+            );
+        }
+
+        .candy-border.left { top: 0; left: 0; }
+        .candy-border.right { top: 0; right: 0; }
+
+        /* Floating confetti background */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float-up linear infinite;
+        }
+
+        @keyframes float-up {
+            from {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.3;
+            }
+            to {
+                transform: translateY(-120vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main container */
+        .screen {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 60px;
+            display: none;
+            z-index: 10;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* STATE 1: IDLE / WELCOME */
+        #idle-screen {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 120px;
+            color: var(--gold);
+            text-shadow:
+                4px 4px 0 var(--hot-pink),
+                8px 8px 0 var(--mint),
+                12px 12px 20px rgba(0,0,0,0.3);
+            margin-bottom: 40px;
+            animation: title-pulse 3s ease-in-out infinite;
+            line-height: 1.2;
+        }
+
+        @keyframes title-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .subtitle {
+            font-family: 'Nunito', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 80px;
+            opacity: 0.9;
+        }
+
+        /* Gumball machine SVG */
+        .gumball-machine {
+            width: 400px;
+            height: 500px;
+            animation: gentle-sway 4s ease-in-out infinite;
+        }
+
+        @keyframes gentle-sway {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+
+        /* STATE 2: CONVERSATION */
+        #conversation-screen {
+            flex-direction: row;
+            padding: 40px;
+            gap: 40px;
+        }
+
+        .transcript-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--hot-pink) transparent;
+        }
+
+        .transcript-area::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .transcript-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .transcript-area::-webkit-scrollbar-thumb {
+            background: var(--hot-pink);
+            border-radius: 4px;
+        }
+
+        .bubble {
+            max-width: 80%;
+            padding: 30px 40px;
+            border-radius: 30px;
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1.4;
+            animation: bubble-appear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        @keyframes bubble-appear {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .bubble.robot {
+            background: var(--lavender);
+            color: var(--deep-purple);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .bubble.user {
+            background: var(--hot-pink);
+            color: var(--white);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .listening-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .listening-visualizer {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pulse-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--mint) 0%, transparent 70%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .pulse-circle:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .pulse-circle:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.3;
+            }
+        }
+
+        .listening-label {
+            font-family: 'Nunito', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--mint);
+            text-align: center;
+        }
+
+        /* STATE 3: GENERATING / LOADING */
+        #generating-screen {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #e8d5f2 0%, #f5e6ff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .watercolor-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(138, 43, 226, 0.1) 50px, rgba(138, 43, 226, 0.1) 51px),
+                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(138, 43, 226, 0.1) 50px, rgba(138, 43, 226, 0.1) 51px);
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            margin-bottom: 60px;
+        }
+
+        .drawing-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sketch-path {
+            fill: none;
+            stroke: #333;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 3s ease-in-out infinite;
+        }
+
+        @keyframes draw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .robot-worker {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            animation: work-move 8s linear infinite;
+        }
+
+        .robot-worker:nth-child(1) { animation-delay: 0s; }
+        .robot-worker:nth-child(2) { animation-delay: 1.6s; }
+        .robot-worker:nth-child(3) { animation-delay: 3.2s; }
+        .robot-worker:nth-child(4) { animation-delay: 4.8s; }
+        .robot-worker:nth-child(5) { animation-delay: 6.4s; }
+
+        @keyframes work-move {
+            0% {
+                left: -100px;
+                top: 20%;
+                transform: rotate(0deg);
+            }
+            25% {
+                left: 30%;
+                top: 40%;
+                transform: rotate(90deg);
+            }
+            50% {
+                left: 70%;
+                top: 60%;
+                transform: rotate(180deg);
+            }
+            75% {
+                left: 50%;
+                top: 20%;
+                transform: rotate(270deg);
+            }
+            100% {
+                left: 110%;
+                top: 80%;
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-bar-container {
+            width: 600px;
+            height: 40px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--hot-pink),
+                var(--hot-pink) 20px,
+                var(--gold) 20px,
+                var(--gold) 40px
+            );
+            animation: fill-bar 15s ease-in-out infinite;
+            border-radius: 20px;
+        }
+
+        @keyframes fill-bar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .loading-phrase {
+            font-family: 'Fredoka One', cursive;
+            font-size: 56px;
+            color: var(--deep-purple);
+            text-align: center;
+            margin-bottom: 40px;
+            animation: phrase-fade 2s ease-in-out infinite;
+        }
+
+        @keyframes phrase-fade {
+            0%, 100% { opacity: 1; transform: translateY(0); }
+            50% { opacity: 0.5; transform: translateY(-10px); }
+        }
+
+        /* STATE 4: REVEAL */
+        #reveal-screen {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--magenta) 100%);
+        }
+
+        .reveal-image {
+            max-width: 80%;
+            max-height: 70vh;
+            border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+            animation: reveal-zoom 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            margin-bottom: 40px;
+        }
+
+        @keyframes reveal-zoom {
+            from {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .reveal-text {
+            font-family: 'Fredoka One', cursive;
+            font-size: 64px;
+            color: var(--gold);
+            text-shadow: 3px 3px 0 var(--hot-pink);
+            margin-bottom: 20px;
+        }
+
+        .reveal-subtitle {
+            font-size: 36px;
+            color: var(--white);
+            margin-bottom: 40px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 30px;
+        }
+
+        .action-button {
+            padding: 25px 60px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .action-button.print {
+            background: var(--hot-pink);
+            color: var(--white);
+            box-shadow: 0 8px 24px rgba(255, 0, 110, 0.4);
+        }
+
+        .action-button.email {
+            background: var(--mint);
+            color: var(--deep-purple);
+            box-shadow: 0 8px 24px rgba(6, 255, 165, 0.4);
+        }
+
+        .action-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+        }
+
+        .action-button:active {
+            transform: translateY(-2px);
+        }
+
+        /* Confetti burst */
+        .confetti-burst {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            top: -20px;
+            animation: confetti-fall 3s ease-in forwards;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(120vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Dev toolbar */
+        .dev-toolbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 10000;
+        }
+
+        .dev-toolbar.hidden {
+            display: none;
+        }
+
+        .dev-button {
+            padding: 10px 20px;
+            background: var(--lavender);
+            color: var(--deep-purple);
+            border: none;
+            border-radius: 5px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .dev-button:hover {
+            background: var(--mint);
+        }
+    </style>
+</head>
+<body>
+    <!-- Candy stripe borders -->
+    <div class="candy-border top"></div>
+    <div class="candy-border bottom"></div>
+    <div class="candy-border left"></div>
+    <div class="candy-border right"></div>
+
+    <!-- Floating confetti background -->
+    <div class="confetti-container" id="confetti-bg"></div>
+
+    <!-- STATE 1: IDLE / WELCOME -->
+    <div class="screen active" id="idle-screen">
+        <h1 class="title">The Idea<br>Capsule<br>Machine</h1>
+        <p class="subtitle">Step right up. Your imagination is waiting.</p>
+        <svg class="gumball-machine" viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg">
+            <!-- Base -->
+            <rect x="60" y="200" width="80" height="40" rx="5" fill="#8B4513"/>
+            <rect x="70" y="210" width="60" height="30" rx="3" fill="#A0522D"/>
+
+            <!-- Stand -->
+            <rect x="85" y="160" width="30" height="50" fill="#8B4513"/>
+
+            <!-- Glass dome -->
+            <circle cx="100" cy="100" r="70" fill="rgba(255,255,255,0.2)" stroke="#FFD60A" stroke-width="4"/>
+
+            <!-- Gumballs -->
+            <circle cx="80" cy="90" r="12" fill="#FF006E"/>
+            <circle cx="110" cy="85" r="12" fill="#06FFA5"/>
+            <circle cx="95" cy="110" r="12" fill="#FFD60A"/>
+            <circle cx="115" cy="105" r="12" fill="#FF006E"/>
+            <circle cx="75" cy="115" r="12" fill="#B388FF"/>
+            <circle cx="100" cy="70" r="12" fill="#06FFA5"/>
+            <circle cx="120" cy="75" r="12" fill="#FFD60A"/>
+
+            <!-- Chute -->
+            <rect x="75" y="150" width="50" height="15" rx="3" fill="#C0C0C0"/>
+            <rect x="80" y="155" width="40" height="8" rx="2" fill="#A9A9A9"/>
+        </svg>
+    </div>
+
+    <!-- STATE 2: CONVERSATION -->
+    <div class="screen" id="conversation-screen">
+        <div class="transcript-area" id="transcript"></div>
+        <div class="listening-area">
+            <div class="listening-visualizer">
+                <div class="pulse-circle"></div>
+                <div class="pulse-circle"></div>
+                <div class="pulse-circle"></div>
+            </div>
+            <p class="listening-label">Tell Reachy your story...</p>
+        </div>
+    </div>
+
+    <!-- STATE 3: GENERATING / LOADING -->
+    <div class="screen" id="generating-screen">
+        <div class="watercolor-grid"></div>
+        <p class="loading-phrase" id="loading-phrase">Doing hard yakka...</p>
+        <div class="canvas-container">
+            <svg class="drawing-svg" viewBox="0 0 800 600">
+                <path class="sketch-path" d="M 100,300 Q 200,100 400,300 T 700,300" style="animation-delay: 0s;"/>
+                <path class="sketch-path" d="M 150,450 Q 300,250 450,450 T 750,450" style="animation-delay: 0.5s;"/>
+                <path class="sketch-path" d="M 50,150 Q 250,50 450,150 T 750,150" style="animation-delay: 1s;"/>
+            </svg>
+            <!-- Robot workers -->
+            <div class="robot-worker">🤖🎨</div>
+            <div class="robot-worker">🤖🔨</div>
+            <div class="robot-worker">🤖✨</div>
+            <div class="robot-worker">🤖📏</div>
+            <div class="robot-worker">🤖🖍️</div>
+        </div>
+        <div class="loading-bar-container">
+            <div class="loading-bar"></div>
+        </div>
+    </div>
+
+    <!-- STATE 4: REVEAL -->
+    <div class="screen" id="reveal-screen">
+        <img class="reveal-image" id="reveal-image" src="" alt="Your masterpiece">
+        <h2 class="reveal-text">Your masterpiece is ready.</h2>
+        <p class="reveal-subtitle" id="reveal-subtitle"></p>
+        <div class="button-group">
+            <button class="action-button print" onclick="handlePrint()">Print</button>
+            <button class="action-button email" onclick="handleEmail()">Email it to me</button>
+        </div>
+    </div>
+
+    <!-- Confetti burst overlay -->
+    <div class="confetti-burst" id="confetti-burst"></div>
+
+    <!-- Dev toolbar -->
+    <div class="dev-toolbar" id="dev-toolbar">
+        <button class="dev-button" onclick="showIdle()">Idle</button>
+        <button class="dev-button" onclick="demoConversation()">Conversation</button>
+        <button class="dev-button" onclick="showGenerating()">Generating</button>
+        <button class="dev-button" onclick="demoReveal()">Reveal</button>
+        <button class="dev-button" onclick="toggleDevToolbar()">Hide Toolbar</button>
+    </div>
+
+    <script>
+        // Configuration
+        const PRODUCTION = true; // Set to true to hide dev toolbar
+
+        // Auto-detect WebSocket URL based on current page location
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host || 'localhost:8001';
+        const WEBSOCKET_URL = `${protocol}//${host}/tv-display`;
+
+        console.log('WebSocket URL:', WEBSOCKET_URL);
+
+        let ws = null;
+        let reconnectTimeout = null;
+
+        const LOADING_PHRASES = [
+            "Doing hard yakka...",
+            "Flabbergasting the pixels...",
+            "Wrangling stray crayons...",
+            "Consulting the imagination goblins...",
+            "Sprinkling dream dust...",
+            "Untangling your memories...",
+            "Teaching robots to feel feelings...",
+            "Squeezing inspiration from thin air...",
+            "Turbocharging the whimsy engine...",
+            "Folding spacetime (and paper)...",
+            "Calibrating the creativity compass...",
+            "Summoning the color fairies...",
+            "Brewing liquid imagination...",
+            "Tickling the dream machine...",
+            "Herding wild ideas..."
+        ];
+
+        let phraseInterval = null;
+        let currentPhraseIndex = 0;
+
+        // Initialize floating confetti
+        function initFloatingConfetti() {
+            const container = document.getElementById('confetti-bg');
+            const colors = ['#FF006E', '#FFD60A', '#06FFA5', '#B388FF'];
+
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                confetti.style.animationDelay = Math.random() * 5 + 's';
+
+                if (Math.random() > 0.5) {
+                    confetti.style.borderRadius = '0';
+                    confetti.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
+                }
+
+                container.appendChild(confetti);
+            }
+        }
+
+        // Global functions for backend integration
+        function showIdle() {
+            hideAllScreens();
+            document.getElementById('idle-screen').classList.add('active');
+        }
+
+        function showConversation(message, speaker) {
+            hideAllScreens();
+            const screen = document.getElementById('conversation-screen');
+            screen.classList.add('active');
+
+            if (message && speaker) {
+                const transcript = document.getElementById('transcript');
+                const bubble = document.createElement('div');
+                bubble.className = `bubble ${speaker}`;
+                bubble.textContent = message;
+                transcript.appendChild(bubble);
+
+                // Auto-scroll
+                transcript.scrollTop = transcript.scrollHeight;
+            }
+        }
+
+        function showGenerating() {
+            hideAllScreens();
+            document.getElementById('generating-screen').classList.add('active');
+
+            // Start rotating phrases
+            currentPhraseIndex = 0;
+            updateLoadingPhrase();
+            phraseInterval = setInterval(updateLoadingPhrase, 2000);
+        }
+
+        function showReveal(imageUrl, userName = null) {
+            hideAllScreens();
+
+            // Stop phrase rotation
+            if (phraseInterval) {
+                clearInterval(phraseInterval);
+                phraseInterval = null;
+            }
+
+            const screen = document.getElementById('reveal-screen');
+            const img = document.getElementById('reveal-image');
+            const subtitle = document.getElementById('reveal-subtitle');
+
+            img.src = imageUrl;
+            if (userName) {
+                subtitle.textContent = `Created for ${userName}`;
+            } else {
+                subtitle.textContent = '';
+            }
+
+            screen.classList.add('active');
+
+            // Trigger confetti burst after 10 seconds
+            setTimeout(triggerConfettiBurst, 10000);
+        }
+
+        // Helper functions
+        function hideAllScreens() {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            // Clear transcript when leaving conversation
+            if (!document.getElementById('conversation-screen').classList.contains('active')) {
+                document.getElementById('transcript').innerHTML = '';
+            }
+        }
+
+        function updateLoadingPhrase() {
+            const phraseEl = document.getElementById('loading-phrase');
+            currentPhraseIndex = (currentPhraseIndex + 1) % LOADING_PHRASES.length;
+            phraseEl.textContent = LOADING_PHRASES[currentPhraseIndex];
+        }
+
+        function triggerConfettiBurst() {
+            const container = document.getElementById('confetti-burst');
+            container.innerHTML = ''; // Clear previous burst
+
+            const colors = ['#FF006E', '#FFD60A', '#06FFA5', '#B388FF', '#880e4f'];
+
+            for (let i = 0; i < 100; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = Math.random() * 0.5 + 's';
+                piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+
+                if (Math.random() > 0.5) {
+                    piece.style.borderRadius = '0';
+                }
+
+                container.appendChild(piece);
+            }
+
+            // Clean up after animation
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function toggleDevToolbar() {
+            const toolbar = document.getElementById('dev-toolbar');
+            toolbar.classList.toggle('hidden');
+        }
+
+        // Action button handlers (stubs for backend)
+        function handlePrint() {
+            console.log('Print action triggered');
+            alert('Print functionality will be connected to backend');
+        }
+
+        function handleEmail() {
+            console.log('Email action triggered');
+            alert('Email functionality will be connected to backend');
+        }
+
+        // Demo functions for testing
+        function demoConversation() {
+            showConversation("Oh, you've got a pink ball! Go ahead and open it — there's something inside for you.", 'robot');
+            setTimeout(() => {
+                showConversation("Inside is a prompt about my favorite memory!", 'user');
+            }, 1500);
+            setTimeout(() => {
+                showConversation("What's the memory that came to mind first?", 'robot');
+            }, 3000);
+            setTimeout(() => {
+                showConversation("My grandmother's garden in the summer", 'user');
+            }, 5000);
+            setTimeout(() => {
+                showConversation("What made that moment feel so alive?", 'robot');
+            }, 6500);
+        }
+
+        function demoReveal() {
+            // Using a placeholder image - replace with actual generated image
+            showReveal('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Crect fill="%23f0f0f0" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="24"%3EYour Coloring Page%3C/text%3E%3C/svg%3E', 'Sarah');
+        }
+
+        // WebSocket connection management
+        function connectWebSocket() {
+            console.log('Connecting to WebSocket...');
+            ws = new WebSocket(WEBSOCKET_URL);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                if (reconnectTimeout) {
+                    clearTimeout(reconnectTimeout);
+                    reconnectTimeout = null;
+                }
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    handleBackendEvent(message);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected. Reconnecting in 3 seconds...');
+                reconnectTimeout = setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Handle events from backend
+        function handleBackendEvent(message) {
+            console.log('Received event:', message);
+
+            switch (message.type) {
+                case 'idle':
+                    showIdle();
+                    break;
+
+                case 'conversation':
+                    const { message: text, speaker } = message.data;
+                    showConversation(text, speaker);
+                    break;
+
+                case 'generating':
+                    showGenerating();
+                    break;
+
+                case 'reveal':
+                    const { imageUrl, userName } = message.data;
+                    showReveal(imageUrl, userName);
+                    break;
+
+                default:
+                    console.warn('Unknown event type:', message.type);
+            }
+        }
+
+        // Initialize
+        initFloatingConfetti();
+
+        // Connect to WebSocket backend
+        connectWebSocket();
+
+        // Hide dev toolbar in production
+        if (PRODUCTION) {
+            document.getElementById('dev-toolbar').classList.add('hidden');
+        }
+
+        // Auto-cycle through states for demo (remove in production)
+        let demoCycleIndex = 0;
+        const demoStates = [
+            () => showIdle(),
+            () => demoConversation(),
+            () => showGenerating(),
+            () => demoReveal()
+        ];
+
+        // Uncomment to enable auto-demo cycle
+        // setInterval(() => {
+        //     demoStates[demoCycleIndex]();
+        //     demoCycleIndex = (demoCycleIndex + 1) % demoStates.length;
+        // }, 8000);
+    </script>
+</body>
+</html>

@@ -9,9 +9,11 @@ import threading
 from typing import Any, Dict, List, Optional
 
 import gradio as gr
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import FileResponse, RedirectResponse
 from fastrtc import Stream
 from gradio.utils import get_space
+from pathlib import Path
 
 from reachy_mini import ReachyMini, ReachyMiniApp
 from reachy_mini_conversation_app.utils import (
@@ -185,7 +187,8 @@ def run(
 
         personality_ui.wire_events(handler, stream_manager)
 
-        app = gr.mount_gradio_app(app, stream.ui, path="/")
+        # Mount Gradio at root path (TV display is now on separate server at port 8001)
+        gr.mount_gradio_app(app, stream.ui, path="/")
     else:
         # In headless mode, wire settings_app + instance_path to console LocalStream
         stream_manager = LocalStream(
