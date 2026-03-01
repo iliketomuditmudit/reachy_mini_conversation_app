@@ -1,105 +1,230 @@
 # TV Display for The Idea Capsule Machine
 
-## Overview
+A magical, full-screen visualization interface for the Reachy Mini art installation. Designed for large screens (1080p/4K TVs) with a playful "kindergarten meets candy shop" aesthetic.
 
-The TV display provides a magical, full-screen visualization of the conversation happening between Reachy Mini and users. It's designed for large screens (1080p/4K TVs) in landscape orientation and features a playful "kindergarten meets candy shop" aesthetic.
+---
 
-## Quick Start
+## 🚀 Complete Setup Guide
 
-### 1. Start the Conversation App
+### Prerequisites
 
-Run your Reachy Mini conversation app as usual with the `--gradio` flag:
+1. **Python 3.12+** with virtual environment
+2. **Reachy Mini robot** (or simulation mode)
+3. **OpenAI API key** for GPT Realtime API
+4. **Two displays** (recommended):
+   - Display 1: Main conversation interface (operator view)
+   - Display 2: TV display (audience view)
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/iliketomuditmudit/reachy_mini_conversation_app.git
+   cd reachy_mini_conversation_app
+   ```
+
+2. **Create and activate virtual environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On macOS/Linux
+   # or
+   .venv\Scripts\activate  # On Windows
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -e .
+   pip install uvicorn httpx  # Additional dependencies for TV display
+   ```
+
+4. **Configure API keys**:
+
+   Create a `.env` file in the project root:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` and add your OpenAI API key:
+   ```
+   OPENAI_API_KEY=sk-your-actual-openai-api-key-here
+   MODEL_NAME="gpt-realtime-1.5"
+   REACHY_MINI_CUSTOM_PROFILE="gumball_reflection"
+   ```
+
+---
+
+## ▶️ Running the System
+
+The TV display requires **TWO separate servers** running simultaneously:
+
+### Terminal 1: Main Conversation App
 
 ```bash
+cd reachy_mini_conversation_app
+source .venv/bin/activate
 python -m reachy_mini_conversation_app --gradio
 ```
 
-### 2. Open the TV Display
+**What this does:**
+- Starts the voice conversation interface on port **7860**
+- Connects to Reachy Mini robot
+- Handles OpenAI Realtime API communication
+- Broadcasts events to the TV display server
 
-Open a web browser on your TV or secondary display and navigate to:
+**Access at:** `http://localhost:7860`
+
+### Terminal 2: TV Display Server
+
+```bash
+cd reachy_mini_conversation_app
+source .venv/bin/activate
+python tv_server.py
+```
+
+**What this does:**
+- Serves the TV display HTML on port **8001**
+- Provides WebSocket endpoint for real-time updates
+- Receives broadcast events from main app via HTTP
+
+**Access at:** `http://localhost:8001`
+
+---
+
+## 🎬 How to Use
+
+### For Operators (Running the Installation)
+
+1. **Start both servers** (see above)
+2. **Open main interface**: `http://localhost:7860` in a browser
+3. **Open TV display**: `http://localhost:8001` on the TV/secondary display
+4. **Press F11** on the TV display to go fullscreen
+5. **Click the microphone button** on the main interface to start a conversation
+6. **Watch the magic**: TV display updates automatically as the conversation progresses!
+
+### For Visitors (Experiencing the Installation)
+
+1. Approach the gumball machine
+2. Pull a pink capsule ball
+3. Open it and read the prompt inside to Reachy
+4. Have a conversation with Reachy (guided by the robot)
+5. Watch the TV display show the magical image generation process
+6. Receive a personalized coloring page!
+
+---
+
+## 🎨 Display States
+
+The TV automatically transitions through four states:
+
+### State 1: IDLE / WELCOME
+**When:** No active conversation
+- Animated gumball machine
+- Pulsing title: "The Idea Capsule Machine"
+- Floating confetti particles
+
+### State 2: CONVERSATION
+**When:** User is talking with Reachy
+- Real-time speech bubbles:
+  - Purple bubbles = Reachy
+  - Pink bubbles = User
+- Pulsing listening visualizer
+- Auto-scrolling transcript
+
+### State 3: GENERATING
+**When:** Reachy is creating the image (15-30 seconds)
+- Animated robot workers painting/building
+- Rotating whimsical phrases:
+  - "Doing hard yakka..."
+  - "Flabbergasting the pixels..."
+  - "Consulting the imagination goblins..."
+  - ...and 12 more!
+- Candy-stripe loading bar
+- Animated sketch paths appearing
+
+### State 4: REVEAL
+**When:** Image is ready
+- Dramatic zoom-in reveal
+- Confetti burst after 10 seconds
+- Print and Email buttons (stubs for future)
+
+---
+
+## 🛠️ Technical Architecture
+
+### System Components
 
 ```
-http://localhost:7860/tv
+┌─────────────────────────────────────────┐
+│  Main App (Port 7860)                   │
+│  - Gradio voice interface               │
+│  - OpenAI Realtime API                  │
+│  - Robot control                        │
+│  - Event broadcasting (HTTP → TV)       │
+└──────────────┬──────────────────────────┘
+               │ HTTP POST
+               │ /broadcast
+               ▼
+┌─────────────────────────────────────────┐
+│  TV Server (Port 8001)                  │
+│  - Serves tv_display.html               │
+│  - WebSocket endpoint                   │
+│  - Broadcasts to connected clients      │
+└──────────────┬──────────────────────────┘
+               │ WebSocket
+               ▼
+┌─────────────────────────────────────────┐
+│  TV Display (Browser)                   │
+│  - Single HTML file                     │
+│  - Real-time UI updates                 │
+│  - 4 automatic states                   │
+└─────────────────────────────────────────┘
 ```
 
-If accessing from another device on the network, replace `localhost` with your server's IP address:
+### Event Flow
 
+1. **User speaks** → Main app receives audio
+2. **OpenAI processes** → Transcription returned
+3. **Main app broadcasts** → `POST http://localhost:8001/broadcast` with event data
+4. **TV server receives** → Forwards to all connected WebSocket clients
+5. **TV display updates** → JavaScript handles event and changes UI state
+
+### Files Modified
+
+**New files:**
+- `tv_display.html` - Complete TV display interface (standalone)
+- `tv_server.py` - Standalone server for TV display
+- `src/reachy_mini_conversation_app/tv_broadcaster.py` - WebSocket connection manager
+- `src/reachy_mini_conversation_app/__main__.py` - Module entry point
+
+**Modified files:**
+- `src/reachy_mini_conversation_app/openai_realtime.py` - Added event broadcasting
+- `src/reachy_mini_conversation_app/main.py` - Restored Gradio to root path
+
+---
+
+## 🎨 Customization
+
+### Hide Dev Toolbar (Production Mode)
+
+Edit `tv_display.html`, line ~690:
+```javascript
+const PRODUCTION = true;  // Change false to true
 ```
-http://192.168.1.XXX:7860/tv
-```
-
-### 3. That's It!
-
-The TV display will automatically connect via WebSocket and show the conversation in real-time.
-
-## Display States
-
-The TV display has four automatic states that sync with the conversation:
-
-### 🎪 State 1: IDLE / WELCOME
-- Shows when no conversation is active
-- Features: animated gumball machine, pulsing title
-- Automatically displays at startup
-
-### 💬 State 2: CONVERSATION
-- Shows when user is talking with Reachy
-- Features: speech bubbles (purple for Reachy, pink for user), pulsing listening visualizer
-- Scrolls automatically as conversation progresses
-
-### ✨ State 3: GENERATING
-- Shows when Reachy is creating the coloring page
-- Features: animated robot workers, rotating whimsical phrases, candy-stripe loading bar
-- Lasts 15-30 seconds during image generation
-
-### 🎨 State 4: REVEAL
-- Shows the final generated coloring page
-- Features: dramatic zoom reveal, confetti burst after 10 seconds
-- Displays Print and Email buttons (stubs for future integration)
-
-## Visual Design
-
-- **Colors**: Deep purple/magenta backgrounds with hot pink, gold, and mint accents
-- **Borders**: Candy-stripe border around entire screen
-- **Background**: Floating confetti particles (circles and stars)
-- **Fonts**: Fredoka One (display), Nunito (body)
-- **Animation**: Smooth transitions, bouncy effects, playful movements
-
-## Technical Details
-
-### WebSocket Connection
-
-The TV display connects to the backend via WebSocket at `/tv-display` endpoint. It receives real-time events:
-
-- `idle` - Switch to welcome screen
-- `conversation` - Add message to chat transcript
-- `generating` - Show loading animation
-- `reveal` - Display final image
-
-### Auto-Reconnection
-
-If the WebSocket connection drops, the display will automatically attempt to reconnect every 3 seconds.
-
-### Dev Toolbar
-
-A development toolbar at the bottom allows manual testing of states:
-
-- **Idle** - Jump to welcome screen
-- **Conversation** - Demo multi-message conversation
-- **Generating** - Watch loading animation
-- **Reveal** - Show image reveal with confetti
-
-To hide the toolbar for production, set `PRODUCTION = true` in the HTML file (line 688).
-
-## Customization
 
 ### Change Loading Phrases
 
-Edit the `LOADING_PHRASES` array in `tv_display.html` (lines 697-712) to add your own whimsical phrases.
+Edit `tv_display.html`, lines ~697-712:
+```javascript
+const LOADING_PHRASES = [
+    "Your custom phrase 1...",
+    "Your custom phrase 2...",
+    // Add more!
+];
+```
 
 ### Adjust Colors
 
-Modify CSS variables at the top of the `<style>` section (lines 11-17):
-
+Edit `tv_display.html`, lines ~11-17:
 ```css
 :root {
     --deep-purple: #4a148c;
@@ -113,50 +238,174 @@ Modify CSS variables at the top of the `<style>` section (lines 11-17):
 
 ### Change Fonts
 
-Replace the Google Fonts import (line 7) and update font-family references in the CSS.
+Edit `tv_display.html`, line ~7:
+```html
+<link href="https://fonts.googleapis.com/css2?family=YourFont&display=swap" rel="stylesheet">
+```
 
-## Troubleshooting
+Then update CSS font-family references throughout.
 
-### Display shows "WebSocket disconnected"
+---
 
-1. Check that the conversation app is running
-2. Verify the URL matches your server address
-3. Check browser console for connection errors
+## 🐛 Troubleshooting
 
-### Display doesn't update
+### Both servers won't start
 
-1. Refresh the page to force reconnection
-2. Check that the conversation app started with `--gradio` flag
-3. Verify WebSocket endpoint is accessible (check firewall settings)
+**Problem:** Port already in use
+**Solution:**
+```bash
+# Check what's using the ports
+lsof -i :7860
+lsof -i :8001
 
-### Wrong display size
+# Kill the process if needed
+kill -9 <PID>
+```
 
-The display is optimized for 1080p/4K landscape TVs. For different resolutions, you may need to adjust font sizes in the CSS.
+### TV display shows "WebSocket disconnected"
 
-## Integration with Backend
+**Checklist:**
+1. ✅ Is `tv_server.py` running?
+2. ✅ Did you restart it after making code changes?
+3. ✅ Check browser console (F12) for detailed error messages
+4. ✅ Verify URL is `http://localhost:8001` (not 7860)
 
-The TV display automatically receives events from the OpenAI Realtime handler. No additional configuration is needed - just open the `/tv` endpoint and it will sync with the conversation.
+**Test WebSocket manually:**
+```bash
+# Should return {"status":"ok"}
+curl -X POST http://localhost:8001/broadcast \
+  -H "Content-Type: application/json" \
+  -d '{"type":"idle","data":{}}'
+```
 
-### Events Broadcasted
+### TV display doesn't update during conversation
 
-1. **Session start** → `idle` state
-2. **User speaks** → `conversation` with user message
-3. **Reachy responds** → `conversation` with robot message
-4. **generate_image tool called** → `generating` state
-5. **Image ready** → `reveal` state with image URL
+**Checklist:**
+1. ✅ Did you restart the **main app** after installing `httpx`?
+2. ✅ Are you using the voice interface at `http://localhost:7860`?
+3. ✅ Did you click the microphone button and speak?
+4. ✅ Check main app logs for HTTP POST errors
+5. ✅ Check TV server logs for "Broadcasting event:" messages
 
-## Files
+**Main app logs should show:**
+```
+INFO:httpx:HTTP Request: POST http://localhost:8001/broadcast
+```
 
-- `tv_display.html` - Main TV display interface (single HTML file)
-- `src/reachy_mini_conversation_app/tv_broadcaster.py` - WebSocket broadcaster
-- `src/reachy_mini_conversation_app/main.py` - WebSocket endpoint and /tv route
-- `src/reachy_mini_conversation_app/openai_realtime.py` - Event broadcasting logic
+**TV server logs should show:**
+```
+INFO:__main__:Broadcasting event: conversation
+```
 
-## Future Enhancements
+### No OpenAI API Key Error
 
-Possible additions:
-- Print button integration
-- Email capture and sending
-- Multi-language support matching Reachy's responses
-- QR code for user to scan and download their image
-- Photo booth mode with countdown timer
+Add your key to `.env`:
+```bash
+echo "OPENAI_API_KEY=sk-your-key-here" >> .env
+```
+
+Or enter it directly in the Gradio interface textbox.
+
+### Camera/microphone not detected
+
+**macOS:** Grant permissions in System Preferences → Privacy → Camera/Microphone
+**Linux:** Check PulseAudio/ALSA configuration
+**Simulation:** Use `--robot-name simulation` flag
+
+---
+
+## 🌐 Network Setup (Multiple Devices)
+
+To access from another device (e.g., TV on same network):
+
+1. **Find your computer's IP address:**
+   ```bash
+   # macOS/Linux
+   ifconfig | grep "inet "
+   # Look for something like 192.168.1.100
+   ```
+
+2. **Update both URLs on the TV device:**
+   - Main interface: `http://192.168.1.100:7860`
+   - TV display: `http://192.168.1.100:8001`
+
+3. **Firewall:** Ensure ports 7860 and 8001 are open
+
+---
+
+## 📊 Performance Tips
+
+### For Smooth Operation
+
+1. **Use Chrome/Edge** - Best WebSocket performance
+2. **Close dev tools** on TV display in production
+3. **Use wired ethernet** for stability
+4. **Close other browser tabs** to free up resources
+
+### Recommended Hardware
+
+- **Computer:** MacBook Pro or equivalent (M1+ recommended)
+- **TV:** Any TV with HDMI input and web browser
+- **Network:** Stable WiFi (5GHz) or ethernet
+
+---
+
+## 🎯 Production Deployment
+
+### Auto-start on Boot (macOS)
+
+Create `~/Library/LaunchAgents/com.reachy.conversation.plist`:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.reachy.conversation</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/path/to/.venv/bin/python</string>
+        <string>-m</string>
+        <string>reachy_mini_conversation_app</string>
+        <string>--gradio</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/path/to/reachy_mini_conversation_app</string>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+```
+
+Load with: `launchctl load ~/Library/LaunchAgents/com.reachy.conversation.plist`
+
+### Kiosk Mode (TV Browser)
+
+Chrome kiosk mode:
+```bash
+google-chrome --kiosk --app=http://localhost:8001
+```
+
+Auto-refresh on connection loss:
+Edit `tv_display.html` and add error recovery to the WebSocket handler.
+
+---
+
+## 📝 License
+
+Same as main repository.
+
+## 🤝 Contributing
+
+Issues and PRs welcome at: https://github.com/iliketomuditmudit/reachy_mini_conversation_app
+
+## 🎉 Credits
+
+- **Design**: Kindergarten meets candy shop aesthetic
+- **Fonts**: Fredoka One, Nunito (Google Fonts)
+- **Robot**: Reachy Mini by Pollen Robotics
+- **AI**: OpenAI GPT Realtime API
+
+---
+
+**Questions?** Check the troubleshooting section or open an issue on GitHub!
