@@ -686,6 +686,7 @@
 
         let ws = null;
         let reconnectTimeout = null;
+        let isInRevealMode = false; // Lock to prevent going back to conversation after reveal
 
         const LOADING_PHRASES = [
             "Doing hard yakka...",
@@ -908,8 +909,15 @@
         function handleBackendEvent(message) {
             console.log('Received event:', message);
 
+            // Once in reveal mode, ignore other state changes
+            if (isInRevealMode && message.type !== 'idle') {
+                console.log('In reveal mode, ignoring event:', message.type);
+                return;
+            }
+
             switch (message.type) {
                 case 'idle':
+                    isInRevealMode = false; // Reset for next session
                     showIdle();
                     break;
 
@@ -924,6 +932,7 @@
 
                 case 'reveal':
                     const { imageUrl, userName } = message.data;
+                    isInRevealMode = true; // Lock in reveal mode
                     showReveal(imageUrl, userName);
                     break;
 

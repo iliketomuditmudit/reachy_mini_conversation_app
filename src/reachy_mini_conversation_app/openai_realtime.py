@@ -470,7 +470,8 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                             )
 
                     if tool_name == "generate_image" and tool_result.get("status") == "generated":
-                        image_source = tool_result.get("saved_path") or tool_result.get("image_url")
+                        # Prefer image_url (accessible by browser) over saved_path (local file)
+                        image_source = tool_result.get("image_url") or tool_result.get("saved_path")
                         if image_source:
                             img = gr.Image(value=image_source)
                             await self.output_queue.put(
