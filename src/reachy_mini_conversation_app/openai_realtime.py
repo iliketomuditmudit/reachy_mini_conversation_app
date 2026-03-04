@@ -83,6 +83,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
         # Internal lifecycle flags
         self._shutdown_requested: bool = False
         self._connected_event: asyncio.Event = asyncio.Event()
+        self._post_session_restart_task: asyncio.Task[None] | None = None
 
     def copy(self) -> "OpenaiRealtimeHandler":
         """Create a copy of the handler."""
@@ -207,6 +208,15 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                 except Exception:
                     pass
 
+    async def _delayed_restart(self, delay: float) -> None:
+        """Restart the session after a delay. Used to reset after a completed exhibition session."""
+        try:
+            await asyncio.sleep(delay)
+            logger.info("Auto-restarting session after %.0fs post-session delay", delay)
+            await self._restart_session()
+        except asyncio.CancelledError:
+            logger.debug("Delayed restart cancelled")
+
     async def _restart_session(self) -> None:
         """Force-close the current session and start a fresh one in background.
 
@@ -220,6 +230,18 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                     pass
                 finally:
                     self.connection = None
+
+            # Reset movement state so stale offsets from the previous session
+            # don't accumulate and push the head into an unreachable IK position.
+            try:
+                self.deps.movement_manager.clear_move_queue()
+                self.deps.movement_manager.set_speech_offsets((0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+                if self.deps.head_wobbler is not None:
+                    self.deps.head_wobbler.reset()
+                if self.deps.camera_worker is not None:
+                    self.deps.camera_worker.reset_face_tracking_offsets()
+            except Exception as e:
+                logger.warning("Failed to reset movement state during session restart: %s", e)
 
             # Ensure we have a client (start_up must have run once)
             if getattr(self, "client", None) is None:
@@ -483,6 +505,17 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                                 "imageUrl": image_source,
                                 "userName": None  # Could extract from conversation if available
                             })
+
+                            # Schedule auto-reset for the next exhibition visitor.
+                            # 45s gives Reachy time to say its closing line and the
+                            # person time to collect their print before the session clears.
+                            if self._post_session_restart_task and not self._post_session_restart_task.done():
+                                self._post_session_restart_task.cancel()
+                            self._post_session_restart_task = asyncio.create_task(
+                                self._delayed_restart(45.0),
+                                name="post-session-auto-restart",
+                            )
+                            logger.info("Scheduled post-session auto-restart in 45s")
 
                     # if this tool call was triggered by an idle signal, don't make the robot speak
                     # for other tool calls, let the robot reply out loud

@@ -187,6 +187,12 @@ def run(
 
         personality_ui.wire_events(handler, stream_manager)
 
+        @app.post("/reset")
+        async def reset_session():
+            """Hard-reset the OpenAI session for the next exhibition visitor."""
+            await handler._restart_session()
+            return {"status": "ok"}
+
         # Mount Gradio at root path (TV display is now on separate server at port 8001)
         gr.mount_gradio_app(app, stream.ui, path="/")
     else:

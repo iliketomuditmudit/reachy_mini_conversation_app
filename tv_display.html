@@ -6,7 +6,7 @@
     <title>The Idea Capsule Machine</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Baloo+2:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,22 +15,27 @@
         }
 
         :root {
-            --deep-purple: #4a148c;
-            --magenta: #880e4f;
-            --hot-pink: #ff006e;
-            --gold: #ffd60a;
-            --mint: #06ffa5;
-            --lavender: #b388ff;
-            --white: #ffffff;
+            --cream:        #FFF8E7;
+            --bubblegum:    #FF6EB4;
+            --lemon:        #FFE135;
+            --mint:         #3DDC84;
+            --sky:          #74C7FF;
+            --tangerine:    #FF8C42;
+            --grape:        #C77DFF;
+            --licorice:     #1A1A2E;
+            --white:        #FFFFFF;
+            --candy-red:    #FF3B3B;
         }
 
         body {
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Baloo 2', cursive;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
             position: relative;
-            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--magenta) 100%);
+            background: radial-gradient(ellipse at 60% 40%, #FFF0C8 0%, #FFF8E7 60%, #FFE8D6 100%);
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='8' fill='%23FF6EB4' stroke='%231A1A2E' stroke-width='2'/%3E%3Ccircle cx='9' cy='9' r='2' fill='rgba(255,255,255,0.6)'/%3E%3C/svg%3E") 12 12, auto;
+            transition: background 0.6s ease;
         }
 
         /* Candy stripe border */
@@ -43,13 +48,13 @@
         .candy-border.top,
         .candy-border.bottom {
             width: 100%;
-            height: 20px;
+            height: 28px;
             background: repeating-linear-gradient(
                 45deg,
-                var(--hot-pink),
-                var(--hot-pink) 20px,
-                var(--gold) 20px,
-                var(--gold) 40px,
+                var(--bubblegum),
+                var(--bubblegum) 20px,
+                var(--lemon) 20px,
+                var(--lemon) 40px,
                 var(--mint) 40px,
                 var(--mint) 60px
             );
@@ -60,14 +65,14 @@
 
         .candy-border.left,
         .candy-border.right {
-            width: 20px;
+            width: 28px;
             height: 100%;
             background: repeating-linear-gradient(
                 135deg,
-                var(--hot-pink),
-                var(--hot-pink) 20px,
-                var(--gold) 20px,
-                var(--gold) 40px,
+                var(--bubblegum),
+                var(--bubblegum) 20px,
+                var(--lemon) 20px,
+                var(--lemon) 40px,
                 var(--mint) 40px,
                 var(--mint) 60px
             );
@@ -76,7 +81,7 @@
         .candy-border.left { top: 0; left: 0; }
         .candy-border.right { top: 0; right: 0; }
 
-        /* Floating confetti background */
+        /* Floating candy background */
         .confetti-container {
             position: fixed;
             top: 0;
@@ -90,17 +95,14 @@
 
         .confetti {
             position: absolute;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            opacity: 0.3;
+            opacity: 0.15;
             animation: float-up linear infinite;
         }
 
         @keyframes float-up {
             from {
                 transform: translateY(0) rotate(0deg);
-                opacity: 0.3;
+                opacity: 0.15;
             }
             to {
                 transform: translateY(-120vh) rotate(360deg);
@@ -111,9 +113,9 @@
         /* Main container */
         .screen {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
+            top: 28px;
+            left: 28px;
+            right: 28px;
             bottom: 60px;
             display: none;
             z-index: 10;
@@ -123,45 +125,95 @@
             display: flex;
         }
 
-        /* STATE 1: IDLE / WELCOME */
+        /* ========== STATE 1: IDLE / WELCOME ========== */
         #idle-screen {
-            flex-direction: column;
+            flex-direction: row;
             justify-content: center;
             align-items: center;
-            text-align: center;
+            gap: 60px;
+            padding: 60px 80px;
+            background-image: radial-gradient(circle, rgba(255,110,180,0.12) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .idle-left {
+            flex: 55;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .idle-right {
+            flex: 45;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .title {
             font-family: 'Fredoka One', cursive;
-            font-size: 120px;
-            color: var(--gold);
+            font-size: 96px;
+            color: var(--licorice);
             text-shadow:
-                4px 4px 0 var(--hot-pink),
-                8px 8px 0 var(--mint),
-                12px 12px 20px rgba(0,0,0,0.3);
-            margin-bottom: 40px;
+                3px 0 0 var(--bubblegum),
+                -3px 0 0 var(--bubblegum),
+                0 3px 0 var(--bubblegum),
+                0 -3px 0 var(--bubblegum),
+                6px 6px 0 rgba(0,0,0,0.08);
+            margin-bottom: 24px;
             animation: title-pulse 3s ease-in-out infinite;
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         @keyframes title-pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.02); }
         }
 
         .subtitle {
-            font-family: 'Nunito', sans-serif;
-            font-size: 48px;
+            font-family: 'Baloo 2', cursive;
+            font-size: 36px;
             font-weight: 700;
+            color: var(--licorice);
+            margin-bottom: 48px;
+            opacity: 0.8;
+        }
+
+        .instructions {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .instruction-step {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            font-family: 'Baloo 2', cursive;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--licorice);
+        }
+
+        .step-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--bubblegum);
             color: var(--white);
-            margin-bottom: 80px;
-            opacity: 0.9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 22px;
+            flex-shrink: 0;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
         }
 
         /* Gumball machine SVG */
         .gumball-machine {
-            width: 400px;
-            height: 500px;
+            width: 500px;
+            height: 620px;
             animation: gentle-sway 4s ease-in-out infinite;
         }
 
@@ -170,22 +222,47 @@
             50% { transform: rotate(2deg); }
         }
 
-        /* STATE 2: CONVERSATION */
+        /* ========== STATE 2: CONVERSATION ========== */
         #conversation-screen {
             flex-direction: row;
             padding: 40px;
             gap: 40px;
         }
 
+        .conversation-blob {
+            position: absolute;
+            border-radius: 60% 40% 70% 30% / 50% 60% 40% 70%;
+            opacity: 0.08;
+            pointer-events: none;
+        }
+
+        .conversation-blob.pink {
+            width: 400px;
+            height: 400px;
+            background: var(--bubblegum);
+            top: -60px;
+            right: -60px;
+        }
+
+        .conversation-blob.yellow {
+            width: 350px;
+            height: 350px;
+            background: var(--lemon);
+            bottom: -40px;
+            left: -40px;
+            border-radius: 40% 60% 30% 70% / 60% 40% 70% 50%;
+        }
+
         .transcript-area {
-            flex: 2;
+            flex: 3;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 28px;
             overflow-y: auto;
             padding-right: 20px;
+            padding-bottom: 20px;
             scrollbar-width: thin;
-            scrollbar-color: var(--hot-pink) transparent;
+            scrollbar-color: var(--bubblegum) transparent;
         }
 
         .transcript-area::-webkit-scrollbar {
@@ -197,25 +274,61 @@
         }
 
         .transcript-area::-webkit-scrollbar-thumb {
-            background: var(--hot-pink);
+            background: var(--bubblegum);
             border-radius: 4px;
         }
 
+        .bubble-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+        }
+
+        .bubble-row.robot {
+            align-self: flex-start;
+        }
+
+        .bubble-row.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .bubble-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            border: 2px solid var(--licorice);
+        }
+
+        .bubble-avatar.robot-avatar {
+            background: var(--sky);
+        }
+
+        .bubble-avatar.user-avatar {
+            background: var(--lemon);
+        }
+
         .bubble {
-            max-width: 80%;
-            padding: 30px 40px;
-            border-radius: 30px;
-            font-size: 36px;
+            max-width: 75%;
+            padding: 24px 32px;
+            font-size: 32px;
             font-weight: 700;
             line-height: 1.4;
-            animation: bubble-appear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            animation: bubble-appear 0.5s cubic-bezier(0.34, 1.2, 0.64, 1);
+            position: relative;
+            border: 3px solid var(--licorice);
+            color: var(--licorice);
         }
 
         @keyframes bubble-appear {
             from {
                 opacity: 0;
-                transform: translateY(30px) scale(0.8);
+                transform: translateY(24px) scale(0.85);
             }
             to {
                 opacity: 1;
@@ -224,17 +337,51 @@
         }
 
         .bubble.robot {
-            background: var(--lavender);
-            color: var(--deep-purple);
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
+            background: var(--sky);
+            border-radius: 24px 24px 24px 4px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.08);
+        }
+
+        .bubble.robot::before {
+            content: '';
+            position: absolute;
+            bottom: -13px;
+            left: 18px;
+            border: 7px solid transparent;
+            border-top: 7px solid var(--licorice);
+        }
+
+        .bubble.robot::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20px;
+            border: 5px solid transparent;
+            border-top: 5px solid var(--sky);
         }
 
         .bubble.user {
-            background: var(--hot-pink);
-            color: var(--white);
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
+            background: var(--lemon);
+            border-radius: 24px 24px 4px 24px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.08);
+        }
+
+        .bubble.user::before {
+            content: '';
+            position: absolute;
+            bottom: -13px;
+            right: 18px;
+            border: 7px solid transparent;
+            border-top: 7px solid var(--licorice);
+        }
+
+        .bubble.user::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            right: 20px;
+            border: 5px solid transparent;
+            border-top: 5px solid var(--lemon);
         }
 
         .listening-area {
@@ -243,235 +390,341 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 40px;
+            gap: 30px;
         }
 
         .listening-visualizer {
-            width: 300px;
-            height: 300px;
+            width: 220px;
+            height: 220px;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        .pulse-circle {
+        /* Robot face listening visualizer */
+        .robot-face-container {
+            position: relative;
+            width: 180px;
+            height: 200px;
+        }
+
+        .robot-head {
+            width: 160px;
+            height: 140px;
+            background: var(--sky);
+            border: 3px solid var(--licorice);
+            border-radius: 30px;
             position: absolute;
-            width: 100%;
-            height: 100%;
+            top: 40px;
+            left: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .robot-eye {
+            width: 24px;
+            height: 28px;
+            background: var(--licorice);
             border-radius: 50%;
-            background: radial-gradient(circle, var(--mint) 0%, transparent 70%);
-            animation: pulse 2s ease-in-out infinite;
+            animation: eye-blink 4s ease-in-out infinite;
         }
 
-        .pulse-circle:nth-child(2) {
-            animation-delay: 0.5s;
+        .robot-eye:nth-child(2) {
+            animation-delay: 0.1s;
         }
 
-        .pulse-circle:nth-child(3) {
-            animation-delay: 1s;
+        @keyframes eye-blink {
+            0%, 92%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
         }
 
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(0.8);
-                opacity: 0.8;
-            }
-            50% {
-                transform: scale(1.2);
-                opacity: 0.3;
-            }
+        .antenna {
+            position: absolute;
+            width: 3px;
+            height: 30px;
+            background: var(--licorice);
+        }
+
+        .antenna.left {
+            top: 10px;
+            left: 55px;
+            transform: rotate(-15deg);
+        }
+
+        .antenna.right {
+            top: 10px;
+            right: 55px;
+            transform: rotate(15deg);
+        }
+
+        .antenna-tip {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--bubblegum);
+            top: -6px;
+            left: -4.5px;
+            animation: antenna-glow 1.5s ease-in-out infinite;
+        }
+
+        .antenna-tip.right-tip {
+            animation-delay: 0.75s;
+        }
+
+        @keyframes antenna-glow {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .ear-speaker {
+            position: absolute;
+            top: 90px;
+        }
+
+        .ear-speaker.left-ear { left: -20px; }
+        .ear-speaker.right-ear { right: -20px; }
+
+        .ear-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid var(--mint);
+            animation: ear-pulse var(--pulse-speed, 2s) ease-out infinite;
+            opacity: 0;
+        }
+
+        .ear-ring:nth-child(1) { width: 20px; height: 20px; top: -10px; left: -10px; }
+        .ear-ring:nth-child(2) { width: 34px; height: 34px; top: -17px; left: -17px; animation-delay: 0.3s; }
+        .ear-ring:nth-child(3) { width: 48px; height: 48px; top: -24px; left: -24px; animation-delay: 0.6s; }
+
+        @keyframes ear-pulse {
+            0% { opacity: 0.6; transform: scale(0.6); }
+            100% { opacity: 0; transform: scale(1.2); }
         }
 
         .listening-label {
-            font-family: 'Nunito', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--mint);
+            font-family: 'Fredoka One', cursive;
+            font-size: 28px;
+            color: var(--bubblegum);
             text-align: center;
         }
 
-        /* STATE 3: GENERATING / LOADING */
+        /* ========== STATE 3: GENERATING / LOADING ========== */
         #generating-screen {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #e8d5f2 0%, #f5e6ff 100%);
+            background: radial-gradient(ellipse at 50% 40%, #FFF5C0 0%, #FFE8A0 40%, #FFD580 100%);
             position: relative;
             overflow: hidden;
         }
 
-        .watercolor-grid {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.3;
-            background-image:
-                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(138, 43, 226, 0.1) 50px, rgba(138, 43, 226, 0.1) 51px),
-                repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(138, 43, 226, 0.1) 50px, rgba(138, 43, 226, 0.1) 51px);
+        .coloring-book-svg {
+            width: 440px;
+            height: 400px;
+            filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.06));
         }
 
-        .canvas-container {
-            position: relative;
-            width: 800px;
-            height: 600px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            overflow: hidden;
-            margin-bottom: 60px;
-        }
-
-        .drawing-svg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .sketch-path {
+        .coloring-book-svg .outline {
             fill: none;
-            stroke: #333;
+            stroke: var(--licorice);
             stroke-width: 3;
             stroke-linecap: round;
-            stroke-dasharray: 1000;
-            stroke-dashoffset: 1000;
-            animation: draw 3s ease-in-out infinite;
+            stroke-linejoin: round;
         }
 
-        @keyframes draw {
-            to {
-                stroke-dashoffset: 0;
-            }
+        /* Stroke draw animation for each element */
+        .draw-sun     { stroke-dasharray: 300; stroke-dashoffset: 300; animation: draw-line 1.5s ease-out 0s    forwards; }
+        .draw-cloud   { stroke-dasharray: 250; stroke-dashoffset: 250; animation: draw-line 1.5s ease-out 1.5s  forwards; }
+        .draw-hill    { stroke-dasharray: 500; stroke-dashoffset: 500; animation: draw-line 1.5s ease-out 3s    forwards; }
+        .draw-house   { stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw-line 1.5s ease-out 4.5s  forwards; }
+        .draw-tree    { stroke-dasharray: 400; stroke-dashoffset: 400; animation: draw-line 1.5s ease-out 6s    forwards; }
+
+        @keyframes draw-line {
+            to { stroke-dashoffset: 0; }
         }
 
-        .robot-worker {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            animation: work-move 8s linear infinite;
+        /* Color fill-in after outline draws */
+        .fill-sun     { fill: var(--lemon);   fill-opacity: 0; animation: color-fill 0.6s ease 1.3s   forwards; }
+        .fill-cloud   { fill: var(--white);   fill-opacity: 0; animation: color-fill 0.6s ease 2.8s   forwards; }
+        .fill-hill    { fill: var(--mint);     fill-opacity: 0; animation: color-fill 0.6s ease 4.3s   forwards; }
+        .fill-house   { fill: var(--bubblegum);fill-opacity: 0; animation: color-fill 0.6s ease 5.8s   forwards; }
+        .fill-door    { fill: var(--tangerine);fill-opacity: 0; animation: color-fill 0.6s ease 6.0s   forwards; }
+        .fill-window  { fill: var(--sky);      fill-opacity: 0; animation: color-fill 0.6s ease 6.1s   forwards; }
+        .fill-tree-t  { fill: var(--mint);     fill-opacity: 0; animation: color-fill 0.6s ease 7.3s   forwards; }
+        .fill-tree-b  { fill: var(--tangerine);fill-opacity: 0; animation: color-fill 0.6s ease 7.1s   forwards; }
+
+        @keyframes color-fill {
+            to { fill-opacity: 1; }
         }
 
-        .robot-worker:nth-child(1) { animation-delay: 0s; }
-        .robot-worker:nth-child(2) { animation-delay: 1.6s; }
-        .robot-worker:nth-child(3) { animation-delay: 3.2s; }
-        .robot-worker:nth-child(4) { animation-delay: 4.8s; }
-        .robot-worker:nth-child(5) { animation-delay: 6.4s; }
-
-        @keyframes work-move {
-            0% {
-                left: -100px;
-                top: 20%;
-                transform: rotate(0deg);
-            }
-            25% {
-                left: 30%;
-                top: 40%;
-                transform: rotate(90deg);
-            }
-            50% {
-                left: 70%;
-                top: 60%;
-                transform: rotate(180deg);
-            }
-            75% {
-                left: 50%;
-                top: 20%;
-                transform: rotate(270deg);
-            }
-            100% {
-                left: 110%;
-                top: 80%;
-                transform: rotate(360deg);
-            }
+        /* Looping: fade out whole SVG then restart */
+        .coloring-book-inner {
+            animation: coloring-loop 11s ease-in-out infinite;
         }
 
-        .loading-bar-container {
-            width: 600px;
-            height: 40px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 30px;
-            box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .loading-bar {
-            height: 100%;
-            width: 0%;
-            background: repeating-linear-gradient(
-                45deg,
-                var(--hot-pink),
-                var(--hot-pink) 20px,
-                var(--gold) 20px,
-                var(--gold) 40px
-            );
-            animation: fill-bar 15s ease-in-out infinite;
-            border-radius: 20px;
-        }
-
-        @keyframes fill-bar {
-            0% { width: 0%; }
-            100% { width: 100%; }
+        @keyframes coloring-loop {
+            0%   { opacity: 1; }
+            82%  { opacity: 1; }
+            90%  { opacity: 0; }
+            95%  { opacity: 0; }
+            100% { opacity: 1; }
         }
 
         .loading-phrase {
             font-family: 'Fredoka One', cursive;
-            font-size: 56px;
-            color: var(--deep-purple);
+            font-size: 48px;
+            color: var(--licorice);
             text-align: center;
-            margin-bottom: 40px;
-            animation: phrase-fade 2s ease-in-out infinite;
+            margin-top: 40px;
+            text-decoration: underline wavy var(--bubblegum);
+            text-underline-offset: 10px;
+            text-decoration-thickness: 3px;
+            position: relative;
+            z-index: 5;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        @keyframes phrase-fade {
-            0%, 100% { opacity: 1; transform: translateY(0); }
-            50% { opacity: 0.5; transform: translateY(-10px); }
+        .loading-phrase.fading-out {
+            opacity: 0;
+            transform: translateY(-8px);
         }
 
-        /* STATE 4: REVEAL */
+        .loading-phrase.fading-in {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        #generating-sublabel {
+            font-family: 'Baloo 2', cursive;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--licorice);
+            opacity: 0.6;
+            margin-top: 16px;
+            min-height: 36px;
+            text-align: center;
+        }
+
+        /* ========== STATE 4: REVEAL ========== */
         #reveal-screen {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--magenta) 100%);
         }
 
         .reveal-image {
-            max-width: 80%;
-            max-height: 70vh;
-            border-radius: 20px;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
-            animation: reveal-zoom 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            margin-bottom: 40px;
+            max-width: 70%;
+            max-height: 60vh;
+            border-radius: 12px;
+            border: 6px solid var(--licorice);
+            box-shadow: 8px 8px 0 var(--licorice);
+            animation: reveal-zoom 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+            margin-bottom: 30px;
+            transform-origin: right center;
+            transition: opacity 0.3s;
         }
 
         @keyframes reveal-zoom {
             from {
                 opacity: 0;
-                transform: scale(0.3);
+                transform: scale(0.3) rotate(0deg);
             }
             to {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1) rotate(-1.5deg);
             }
+        }
+
+        .reveal-image.printing {
+            animation: feed-to-printer 1.8s cubic-bezier(0.55, 0, 0.9, 0.5) forwards;
+        }
+
+        @keyframes feed-to-printer {
+            0%   { transform: translateX(0) scaleY(1) rotate(-1.5deg); opacity: 1; }
+            15%  { transform: translateX(50px) scaleY(0.97) rotate(0deg); opacity: 1; }
+            100% { transform: translateX(115vw) scaleY(0.65) rotate(2deg); opacity: 0.2; }
+        }
+
+        /* Printer panel — slides in from the right */
+        .printer-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 90px;
+            background: var(--licorice);
+            border-left: 3px solid var(--bubblegum);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            z-index: 200;
+            transform: translateX(100%);
+            transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: -6px 0 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .printer-panel.visible {
+            transform: translateX(0);
+        }
+
+        .printer-feed-line {
+            width: 44px;
+            height: 3px;
+            background: var(--bubblegum);
+            border-radius: 2px;
+            opacity: 0.1;
+            animation: feed-blink 0.45s ease-in-out infinite;
+        }
+
+        .printer-feed-line:nth-child(2) { animation-delay: 0.1s; }
+        .printer-feed-line:nth-child(3) { animation-delay: 0.2s; }
+        .printer-feed-line:nth-child(4) { animation-delay: 0.3s; }
+        .printer-feed-line:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes feed-blink {
+            0%, 100% { opacity: 0.1; }
+            50%       { opacity: 1; }
+        }
+
+        .printer-label {
+            font-family: 'Fredoka One', cursive;
+            font-size: 13px;
+            color: var(--bubblegum);
+            writing-mode: vertical-rl;
+            letter-spacing: 3px;
+            opacity: 0.7;
+            margin-top: 16px;
         }
 
         .reveal-text {
             font-family: 'Fredoka One', cursive;
-            font-size: 64px;
-            color: var(--gold);
-            text-shadow: 3px 3px 0 var(--hot-pink);
-            margin-bottom: 20px;
+            font-size: 52px;
+            color: var(--bubblegum);
+            margin-bottom: 12px;
+            animation: reveal-text-in 0.6s ease forwards;
+            animation-delay: 0.4s;
+            opacity: 0;
+            animation-fill-mode: backwards;
+        }
+
+        @keyframes reveal-text-in {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .reveal-subtitle {
-            font-size: 36px;
-            color: var(--white);
-            margin-bottom: 40px;
+            font-family: 'Baloo 2', cursive;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--licorice);
+            opacity: 0.7;
+            margin-bottom: 36px;
         }
 
         .button-group {
@@ -480,37 +733,57 @@
         }
 
         .action-button {
-            padding: 25px 60px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 32px;
-            font-weight: 800;
-            border: none;
+            padding: 20px 50px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 30px;
+            border: 4px solid var(--licorice);
             border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            box-shadow: 5px 5px 0 var(--licorice);
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-transform: none;
+            letter-spacing: 0;
         }
 
         .action-button.print {
-            background: var(--hot-pink);
+            background: var(--bubblegum);
             color: var(--white);
-            box-shadow: 0 8px 24px rgba(255, 0, 110, 0.4);
         }
 
         .action-button.email {
             background: var(--mint);
-            color: var(--deep-purple);
-            box-shadow: 0 8px 24px rgba(6, 255, 165, 0.4);
+            color: var(--licorice);
         }
 
         .action-button:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 var(--licorice);
         }
 
         .action-button:active {
-            transform: translateY(-2px);
+            transform: translate(2px, 2px);
+            box-shadow: 3px 3px 0 var(--licorice);
+        }
+
+        .print-success-msg {
+            display: none;
+            font-family: 'Fredoka One', cursive;
+            font-size: 36px;
+            color: var(--white);
+            background: var(--licorice);
+            padding: 16px 40px;
+            border-radius: 50px;
+            text-align: center;
+        }
+
+        .print-success-msg.visible {
+            display: block;
+            animation: success-pop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes success-pop {
+            from { transform: scale(0.3); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
         }
 
         /* Confetti burst */
@@ -546,7 +819,7 @@
             left: 0;
             right: 0;
             height: 50px;
-            background: rgba(0,0,0,0.8);
+            background: var(--licorice);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -560,11 +833,11 @@
 
         .dev-button {
             padding: 10px 20px;
-            background: var(--lavender);
-            color: var(--deep-purple);
+            background: var(--bubblegum);
+            color: var(--white);
             border: none;
             border-radius: 5px;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Baloo 2', cursive;
             font-weight: 700;
             cursor: pointer;
             font-size: 14px;
@@ -572,7 +845,137 @@
 
         .dev-button:hover {
             background: var(--mint);
+            color: var(--licorice);
         }
+
+        .dev-button.reset {
+            background: var(--candy-red);
+            color: white;
+        }
+
+        .dev-button.reset:hover {
+            background: #ff0000;
+        }
+
+        /* Operator reset button — discreet, top-right corner */
+        .operator-reset {
+            position: fixed;
+            top: 36px;
+            right: 36px;
+            z-index: 10001;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .operator-reset:hover,
+        .operator-reset.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        body:hover .operator-reset {
+            opacity: 0.15;
+            pointer-events: auto;
+        }
+
+        body:hover .operator-reset:hover {
+            opacity: 1;
+        }
+
+        .operator-reset button {
+            background: rgba(26,26,46,0.7);
+            color: var(--candy-red);
+            border: 1px solid var(--candy-red);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: 'Baloo 2', cursive;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+        }
+
+        .operator-reset button:hover {
+            background: var(--candy-red);
+            color: white;
+        }
+
+        /* Reset confirmation modal */
+        .reset-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 20000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reset-modal.active {
+            display: flex;
+        }
+
+        .reset-modal-box {
+            background: var(--cream);
+            border: 4px solid var(--candy-red);
+            border-radius: 20px;
+            padding: 40px 50px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 8px 8px 0 var(--licorice);
+        }
+
+        .reset-modal-box h2 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 28px;
+            color: var(--licorice);
+            margin-bottom: 12px;
+        }
+
+        .reset-modal-box p {
+            font-family: 'Baloo 2', cursive;
+            font-size: 16px;
+            color: var(--licorice);
+            opacity: 0.7;
+            margin-bottom: 30px;
+        }
+
+        .reset-modal-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .reset-confirm {
+            background: var(--candy-red);
+            color: white;
+            border: 3px solid var(--licorice);
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--licorice);
+        }
+
+        .reset-confirm:hover { background: #ff0000; }
+
+        .reset-cancel {
+            background: var(--white);
+            color: var(--licorice);
+            border: 3px solid var(--licorice);
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-family: 'Baloo 2', cursive;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--licorice);
+        }
+
+        .reset-cancel:hover { background: #f0f0f0; }
     </style>
 </head>
 <body>
@@ -582,87 +985,229 @@
     <div class="candy-border left"></div>
     <div class="candy-border right"></div>
 
-    <!-- Floating confetti background -->
+    <!-- Floating candy background -->
     <div class="confetti-container" id="confetti-bg"></div>
 
     <!-- STATE 1: IDLE / WELCOME -->
     <div class="screen active" id="idle-screen">
-        <h1 class="title">The Idea<br>Capsule<br>Machine</h1>
-        <p class="subtitle">Step right up. Your imagination is waiting.</p>
-        <svg class="gumball-machine" viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg">
-            <!-- Base -->
-            <rect x="60" y="200" width="80" height="40" rx="5" fill="#8B4513"/>
-            <rect x="70" y="210" width="60" height="30" rx="3" fill="#A0522D"/>
+        <div class="idle-left">
+            <h1 class="title">The Idea<br>Capsule<br>Machine</h1>
+            <p class="subtitle">🍬 Step right up and grab a gumball from the machine</p>
+            <div class="instructions">
+                <div class="instruction-step">
+                    <div class="step-badge">1</div>
+                    <span>Pick up a capsule from the machine.</span>
+                </div>
+                <div class="instruction-step">
+                    <div class="step-badge">2</div>
+                    <span>Open it. Read the prompt aloud to Reachy.</span>
+                </div>
+            </div>
+        </div>
+        <div class="idle-right">
+            <svg class="gumball-machine" viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#C0C0C0"/>
+                        <stop offset="40%" stop-color="#E8E8E8"/>
+                        <stop offset="60%" stop-color="#D0D0D0"/>
+                        <stop offset="100%" stop-color="#888"/>
+                    </linearGradient>
+                    <radialGradient id="gb-bubblegum" cx="35%" cy="35%"><stop offset="0%" stop-color="#FF9DD4"/><stop offset="100%" stop-color="#FF6EB4"/></radialGradient>
+                    <radialGradient id="gb-lemon" cx="35%" cy="35%"><stop offset="0%" stop-color="#FFF06A"/><stop offset="100%" stop-color="#FFE135"/></radialGradient>
+                    <radialGradient id="gb-mint" cx="35%" cy="35%"><stop offset="0%" stop-color="#7AEAAA"/><stop offset="100%" stop-color="#3DDC84"/></radialGradient>
+                    <radialGradient id="gb-sky" cx="35%" cy="35%"><stop offset="0%" stop-color="#A8DBFF"/><stop offset="100%" stop-color="#74C7FF"/></radialGradient>
+                    <radialGradient id="gb-tangerine" cx="35%" cy="35%"><stop offset="0%" stop-color="#FFB07A"/><stop offset="100%" stop-color="#FF8C42"/></radialGradient>
+                </defs>
 
-            <!-- Stand -->
-            <rect x="85" y="160" width="30" height="50" fill="#8B4513"/>
+                <!-- Base -->
+                <rect x="55" y="268" width="130" height="42" rx="8" fill="#8B4513" stroke="#5C2D0A" stroke-width="2"/>
+                <rect x="65" y="278" width="110" height="28" rx="5" fill="#A0522D"/>
 
-            <!-- Glass dome -->
-            <circle cx="100" cy="100" r="70" fill="rgba(255,255,255,0.2)" stroke="#FFD60A" stroke-width="4"/>
+                <!-- Stand / Pole -->
+                <rect x="102" y="218" width="36" height="55" rx="4" fill="url(#chrome)" stroke="#777" stroke-width="1"/>
 
-            <!-- Gumballs -->
-            <circle cx="80" cy="90" r="12" fill="#FF006E"/>
-            <circle cx="110" cy="85" r="12" fill="#06FFA5"/>
-            <circle cx="95" cy="110" r="12" fill="#FFD60A"/>
-            <circle cx="115" cy="105" r="12" fill="#FF006E"/>
-            <circle cx="75" cy="115" r="12" fill="#B388FF"/>
-            <circle cx="100" cy="70" r="12" fill="#06FFA5"/>
-            <circle cx="120" cy="75" r="12" fill="#FFD60A"/>
+                <!-- Glass dome -->
+                <ellipse cx="120" cy="125" rx="88" ry="92" fill="rgba(220, 245, 255, 0.3)" stroke="var(--licorice)" stroke-width="3"/>
+                <!-- Glass reflection highlight -->
+                <path d="M 65 80 Q 85 50 115 65" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="5" stroke-linecap="round"/>
 
-            <!-- Chute -->
-            <rect x="75" y="150" width="50" height="15" rx="3" fill="#C0C0C0"/>
-            <rect x="80" y="155" width="40" height="8" rx="2" fill="#A9A9A9"/>
-        </svg>
+                <!-- Gumballs — 18 gumballs in pile -->
+                <!-- Bottom row (dense) -->
+                <circle cx="82"  cy="185" r="14" fill="url(#gb-bubblegum)"/>
+                <circle cx="108" cy="188" r="13" fill="url(#gb-mint)"/>
+                <circle cx="134" cy="185" r="14" fill="url(#gb-lemon)"/>
+                <circle cx="158" cy="187" r="12" fill="url(#gb-sky)"/>
+                <!-- Second row -->
+                <circle cx="72"  cy="164" r="13" fill="url(#gb-tangerine)"/>
+                <circle cx="96"  cy="168" r="14" fill="url(#gb-sky)"/>
+                <circle cx="120" cy="165" r="13" fill="url(#gb-bubblegum)"/>
+                <circle cx="144" cy="167" r="14" fill="url(#gb-mint)"/>
+                <circle cx="166" cy="165" r="12" fill="url(#gb-lemon)"/>
+                <!-- Third row -->
+                <circle cx="85"  cy="145" r="12" fill="url(#gb-lemon)"/>
+                <circle cx="108" cy="148" r="13" fill="url(#gb-tangerine)"/>
+                <circle cx="132" cy="146" r="12" fill="url(#gb-bubblegum)"/>
+                <circle cx="154" cy="148" r="11" fill="url(#gb-sky)"/>
+                <!-- Fourth row (sparse) -->
+                <circle cx="95"  cy="125" r="12" fill="url(#gb-mint)"/>
+                <circle cx="118" cy="128" r="11" fill="url(#gb-sky)"/>
+                <circle cx="140" cy="126" r="12" fill="url(#gb-tangerine)"/>
+                <!-- Top (very sparse) -->
+                <circle cx="108" cy="106" r="10" fill="url(#gb-bubblegum)"/>
+                <circle cx="130" cy="108" r="11" fill="url(#gb-lemon)"/>
+
+                <!-- Dispensing chute -->
+                <rect x="90" y="210" width="60" height="14" rx="4" fill="url(#chrome)" stroke="#777" stroke-width="1"/>
+                <rect x="95" y="217" width="50" height="5" rx="2" fill="#999"/>
+
+                <!-- Coin slot -->
+                <rect x="108" y="240" width="24" height="4" rx="2" fill="#444"/>
+                <text x="120" y="260" text-anchor="middle" font-family="'Fredoka One', cursive" font-size="12" fill="#A0522D">25¢</text>
+            </svg>
+        </div>
     </div>
 
     <!-- STATE 2: CONVERSATION -->
     <div class="screen" id="conversation-screen">
+        <div class="conversation-blob pink"></div>
+        <div class="conversation-blob yellow"></div>
         <div class="transcript-area" id="transcript"></div>
         <div class="listening-area">
             <div class="listening-visualizer">
-                <div class="pulse-circle"></div>
-                <div class="pulse-circle"></div>
-                <div class="pulse-circle"></div>
+                <div class="robot-face-container">
+                    <div class="antenna left">
+                        <div class="antenna-tip"></div>
+                    </div>
+                    <div class="antenna right">
+                        <div class="antenna-tip right-tip"></div>
+                    </div>
+                    <div class="robot-head">
+                        <div class="robot-eye"></div>
+                        <div class="robot-eye"></div>
+                    </div>
+                    <div class="ear-speaker left-ear">
+                        <div class="ear-ring"></div>
+                        <div class="ear-ring"></div>
+                        <div class="ear-ring"></div>
+                    </div>
+                    <div class="ear-speaker right-ear">
+                        <div class="ear-ring"></div>
+                        <div class="ear-ring"></div>
+                        <div class="ear-ring"></div>
+                    </div>
+                </div>
             </div>
-            <p class="listening-label">Tell Reachy your story...</p>
+            <p class="listening-label" id="listening-label">Reachy is listening ✨</p>
         </div>
     </div>
 
     <!-- STATE 3: GENERATING / LOADING -->
     <div class="screen" id="generating-screen">
-        <div class="watercolor-grid"></div>
+        <svg class="coloring-book-svg" viewBox="0 0 440 400" xmlns="http://www.w3.org/2000/svg">
+            <g class="coloring-book-inner">
+                <!-- Sun -->
+                <circle class="fill-sun" cx="370" cy="65" r="45"/>
+                <circle class="outline draw-sun" cx="370" cy="65" r="45"/>
+                <!-- Sun rays -->
+                <line class="outline draw-sun" x1="370" y1="10" x2="370" y2="0" style="animation-delay:0.8s"/>
+                <line class="outline draw-sun" x1="415" y1="25" x2="425" y2="15" style="animation-delay:0.9s"/>
+                <line class="outline draw-sun" x1="425" y1="65" x2="435" y2="65" style="animation-delay:1.0s"/>
+                <line class="outline draw-sun" x1="415" y1="105" x2="425" y2="115" style="animation-delay:1.1s"/>
+
+                <!-- Cloud -->
+                <path class="fill-cloud" d="M 80,80 Q 80,50 110,55 Q 120,30 150,40 Q 175,25 195,45 Q 220,35 220,60 Q 240,65 235,85 Q 235,100 210,100 L 95,100 Q 70,100 70,85 Q 65,70 80,80 Z"/>
+                <path class="outline draw-cloud" d="M 80,80 Q 80,50 110,55 Q 120,30 150,40 Q 175,25 195,45 Q 220,35 220,60 Q 240,65 235,85 Q 235,100 210,100 L 95,100 Q 70,100 70,85 Q 65,70 80,80 Z"/>
+
+                <!-- Hill -->
+                <path class="fill-hill" d="M -10,380 Q 100,220 220,280 Q 340,220 450,380 Z"/>
+                <path class="outline draw-hill" d="M -10,380 Q 100,220 220,280 Q 340,220 450,380"/>
+
+                <!-- House body -->
+                <rect class="fill-house" x="150" y="240" width="120" height="100" rx="3"/>
+                <rect class="outline draw-house" x="150" y="240" width="120" height="100" rx="3"/>
+                <!-- House roof -->
+                <path class="fill-house" d="M 140,245 L 210,190 L 280,245 Z" style="fill: var(--candy-red); animation-delay: 6s;"/>
+                <path class="outline draw-house" d="M 140,245 L 210,190 L 280,245 Z"/>
+                <!-- Door -->
+                <rect class="fill-door" x="190" y="295" width="30" height="45" rx="3"/>
+                <rect class="outline draw-house" x="190" y="295" width="30" height="45" rx="3"/>
+                <!-- Window -->
+                <rect class="fill-window" x="240" y="260" width="22" height="22" rx="2"/>
+                <rect class="outline draw-house" x="240" y="260" width="22" height="22" rx="2"/>
+                <line class="outline draw-house" x1="251" y1="260" x2="251" y2="282"/>
+                <line class="outline draw-house" x1="240" y1="271" x2="262" y2="271"/>
+
+                <!-- Tree trunk -->
+                <rect class="fill-tree-b" x="60" y="280" width="20" height="60" rx="4"/>
+                <rect class="outline draw-tree" x="60" y="280" width="20" height="60" rx="4"/>
+                <!-- Tree foliage -->
+                <circle class="fill-tree-t" cx="70" cy="260" r="35"/>
+                <circle class="outline draw-tree" cx="70" cy="260" r="35"/>
+                <circle class="fill-tree-t" cx="50" cy="275" r="25" style="animation-delay: 7.4s;"/>
+                <circle class="outline draw-tree" cx="50" cy="275" r="25"/>
+                <circle class="fill-tree-t" cx="90" cy="275" r="25" style="animation-delay: 7.5s;"/>
+                <circle class="outline draw-tree" cx="90" cy="275" r="25"/>
+            </g>
+        </svg>
         <p class="loading-phrase" id="loading-phrase">Doing hard yakka...</p>
-        <div class="canvas-container">
-            <svg class="drawing-svg" viewBox="0 0 800 600">
-                <path class="sketch-path" d="M 100,300 Q 200,100 400,300 T 700,300" style="animation-delay: 0s;"/>
-                <path class="sketch-path" d="M 150,450 Q 300,250 450,450 T 750,450" style="animation-delay: 0.5s;"/>
-                <path class="sketch-path" d="M 50,150 Q 250,50 450,150 T 750,150" style="animation-delay: 1s;"/>
-            </svg>
-            <!-- Robot workers -->
-            <div class="robot-worker">🤖🎨</div>
-            <div class="robot-worker">🤖🔨</div>
-            <div class="robot-worker">🤖✨</div>
-            <div class="robot-worker">🤖📏</div>
-            <div class="robot-worker">🤖🖍️</div>
-        </div>
-        <div class="loading-bar-container">
-            <div class="loading-bar"></div>
-        </div>
+        <p id="generating-sublabel"></p>
     </div>
 
     <!-- STATE 4: REVEAL -->
     <div class="screen" id="reveal-screen">
         <img class="reveal-image" id="reveal-image" src="" alt="Your masterpiece">
-        <h2 class="reveal-text">Your masterpiece is ready.</h2>
+        <h2 class="reveal-text" id="reveal-text">✨ Here's your page! ✨</h2>
         <p class="reveal-subtitle" id="reveal-subtitle"></p>
-        <div class="button-group">
-            <button class="action-button print" onclick="handlePrint()">Print</button>
-            <button class="action-button email" onclick="handleEmail()">Email it to me</button>
+        <div class="button-group" id="button-group">
+            <button class="action-button print" onclick="handlePrint()">🖨️ Print my page</button>
+            <button class="action-button email" onclick="handleEmail()">📧 Email it to me</button>
         </div>
+        <p class="print-success-msg" id="print-success-msg">🎉 Printing now — go grab it!</p>
+    </div>
+
+    <!-- Printer panel — slides in from right during print -->
+    <div class="printer-panel" id="printer-panel">
+        <svg width="54" height="48" viewBox="0 0 54 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Body -->
+            <rect x="4" y="12" width="46" height="28" rx="5" fill="#3a3a5a"/>
+            <!-- Feed slot -->
+            <rect x="12" y="22" width="30" height="5" rx="2.5" fill="#111"/>
+            <!-- Status light -->
+            <circle cx="42" cy="18" r="4" fill="var(--mint)">
+                <animate attributeName="fill" values="#3DDC84;#FFE135;#3DDC84" dur="0.9s" repeatCount="indefinite"/>
+                <animate attributeName="r" values="4;5;4" dur="0.9s" repeatCount="indefinite"/>
+            </circle>
+            <!-- Output tray -->
+            <rect x="14" y="40" width="26" height="6" rx="3" fill="#2a2a4a"/>
+        </svg>
+        <div class="printer-feed-line"></div>
+        <div class="printer-feed-line"></div>
+        <div class="printer-feed-line"></div>
+        <div class="printer-feed-line"></div>
+        <div class="printer-feed-line"></div>
+        <span class="printer-label">PRINTING</span>
     </div>
 
     <!-- Confetti burst overlay -->
     <div class="confetti-burst" id="confetti-burst"></div>
+
+    <!-- Operator reset button (discreet, top-right) -->
+    <div class="operator-reset" id="operator-reset">
+        <button onclick="showResetModal()" title="Reset session for next visitor">⟳ Reset</button>
+    </div>
+
+    <!-- Reset confirmation modal -->
+    <div class="reset-modal" id="reset-modal">
+        <div class="reset-modal-box">
+            <h2>Reset Session?</h2>
+            <p>This will clear the current conversation and return to the welcome screen for the next visitor.</p>
+            <div class="reset-modal-buttons">
+                <button class="reset-cancel" onclick="hideResetModal()">Cancel</button>
+                <button class="reset-confirm" onclick="confirmReset()">Reset</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Dev toolbar -->
     <div class="dev-toolbar" id="dev-toolbar">
@@ -670,12 +1215,17 @@
         <button class="dev-button" onclick="demoConversation()">Conversation</button>
         <button class="dev-button" onclick="showGenerating()">Generating</button>
         <button class="dev-button" onclick="demoReveal()">Reveal</button>
+        <button class="dev-button reset" onclick="showResetModal()">Reset Session</button>
         <button class="dev-button" onclick="toggleDevToolbar()">Hide Toolbar</button>
     </div>
 
     <script>
-        // Configuration
-        const PRODUCTION = true; // Set to true to hide dev toolbar
+        // Auto-detect environment:
+        //   file:// protocol  → local testing  → show toolbar
+        //   http(s):// served → TV / production → hide toolbar
+        //   Add ?dev to any URL to force-show toolbar (e.g. http://pi:8001/tv-display?dev)
+        const urlParams = new URLSearchParams(window.location.search);
+        const PRODUCTION = window.location.protocol !== 'file:' && !urlParams.has('dev');
 
         // Auto-detect WebSocket URL based on current page location
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -687,6 +1237,8 @@
         let ws = null;
         let reconnectTimeout = null;
         let isInRevealMode = false; // Lock to prevent going back to conversation after reveal
+        let lastSpeaker = 'robot';
+        let generatingSublabelTimeout = null;
 
         const LOADING_PHRASES = [
             "Doing hard yakka...",
@@ -709,20 +1261,31 @@
         let phraseInterval = null;
         let currentPhraseIndex = 0;
 
-        // Initialize floating confetti
+        // Initialize floating candy shapes
         function initFloatingConfetti() {
             const container = document.getElementById('confetti-bg');
-            const colors = ['#FF006E', '#FFD60A', '#06FFA5', '#B388FF'];
+            const colors = ['#FF6EB4', '#FFE135', '#3DDC84', '#74C7FF', '#FF8C42'];
+            const shapes = ['circle', 'rect', 'star'];
 
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 55; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
+                const size = Math.random() * 10 + 6;
+                confetti.style.width = size + 'px';
+                confetti.style.height = size + 'px';
                 confetti.style.left = Math.random() * 100 + '%';
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animationDuration = (Math.random() * 10 + 15) + 's';
-                confetti.style.animationDelay = Math.random() * 5 + 's';
+                confetti.style.animationDuration = (Math.random() * 15 + 30) + 's';
+                confetti.style.animationDelay = Math.random() * 10 + 's';
+                confetti.style.opacity = (Math.random() * 0.08 + 0.12).toFixed(2);
 
-                if (Math.random() > 0.5) {
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                if (shape === 'circle') {
+                    confetti.style.borderRadius = '50%';
+                } else if (shape === 'rect') {
+                    confetti.style.borderRadius = '2px';
+                    confetti.style.transform = 'rotate(45deg)';
+                } else {
                     confetti.style.borderRadius = '0';
                     confetti.style.clipPath = 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)';
                 }
@@ -734,6 +1297,7 @@
         // Global functions for backend integration
         function showIdle() {
             hideAllScreens();
+            resetPrintState();
             document.getElementById('idle-screen').classList.add('active');
         }
 
@@ -743,14 +1307,38 @@
             screen.classList.add('active');
 
             if (message && speaker) {
+                lastSpeaker = speaker;
                 const transcript = document.getElementById('transcript');
+
+                // Create bubble row with avatar
+                const row = document.createElement('div');
+                row.className = `bubble-row ${speaker}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = `bubble-avatar ${speaker === 'robot' ? 'robot-avatar' : 'user-avatar'}`;
+                avatar.textContent = speaker === 'robot' ? '🤖' : '🧑';
+
                 const bubble = document.createElement('div');
                 bubble.className = `bubble ${speaker}`;
                 bubble.textContent = message;
-                transcript.appendChild(bubble);
+
+                row.appendChild(avatar);
+                row.appendChild(bubble);
+                transcript.appendChild(row);
 
                 // Auto-scroll
                 transcript.scrollTop = transcript.scrollHeight;
+
+                // Update listening label based on who just spoke
+                const label = document.getElementById('listening-label');
+                const earRings = document.querySelectorAll('.ear-ring');
+                if (speaker === 'robot') {
+                    label.textContent = 'Reachy is speaking...';
+                    earRings.forEach(r => r.style.setProperty('--pulse-speed', '3s'));
+                } else {
+                    label.textContent = 'Reachy is listening ✨';
+                    earRings.forEach(r => r.style.setProperty('--pulse-speed', '1.2s'));
+                }
             }
         }
 
@@ -758,10 +1346,28 @@
             hideAllScreens();
             document.getElementById('generating-screen').classList.add('active');
 
+            // Clear sublabel
+            document.getElementById('generating-sublabel').textContent = '';
+            if (generatingSublabelTimeout) clearTimeout(generatingSublabelTimeout);
+
+            // Show sublabel after 20 seconds
+            generatingSublabelTimeout = setTimeout(() => {
+                document.getElementById('generating-sublabel').textContent = 'Almost there... good things take time! 🎨';
+            }, 20000);
+
+            // Restart coloring book animation by cloning inner group
+            const svg = document.querySelector('.coloring-book-inner');
+            if (svg) {
+                const parent = svg.parentElement;
+                const clone = svg.cloneNode(true);
+                parent.removeChild(svg);
+                parent.appendChild(clone);
+            }
+
             // Start rotating phrases
             currentPhraseIndex = 0;
             updateLoadingPhrase();
-            phraseInterval = setInterval(updateLoadingPhrase, 2000);
+            phraseInterval = setInterval(updateLoadingPhrase, 2500);
         }
 
         function showReveal(imageUrl, userName = null) {
@@ -772,6 +1378,16 @@
                 clearInterval(phraseInterval);
                 phraseInterval = null;
             }
+            if (generatingSublabelTimeout) {
+                clearTimeout(generatingSublabelTimeout);
+                generatingSublabelTimeout = null;
+            }
+
+            // Camera flash effect
+            document.body.style.background = 'var(--lemon)';
+            setTimeout(() => {
+                document.body.style.background = '';
+            }, 100);
 
             const screen = document.getElementById('reveal-screen');
             const img = document.getElementById('reveal-image');
@@ -786,8 +1402,8 @@
 
             screen.classList.add('active');
 
-            // Trigger confetti burst after 10 seconds
-            setTimeout(triggerConfettiBurst, 10000);
+            // Trigger confetti burst almost immediately
+            setTimeout(triggerConfettiBurst, 800);
         }
 
         // Helper functions
@@ -805,14 +1421,27 @@
         function updateLoadingPhrase() {
             const phraseEl = document.getElementById('loading-phrase');
             currentPhraseIndex = (currentPhraseIndex + 1) % LOADING_PHRASES.length;
-            phraseEl.textContent = LOADING_PHRASES[currentPhraseIndex];
+
+            // Fade out
+            phraseEl.classList.add('fading-out');
+
+            setTimeout(() => {
+                phraseEl.textContent = LOADING_PHRASES[currentPhraseIndex];
+                phraseEl.classList.remove('fading-out');
+                phraseEl.classList.add('fading-in');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        phraseEl.classList.remove('fading-in');
+                    });
+                });
+            }, 300);
         }
 
         function triggerConfettiBurst() {
             const container = document.getElementById('confetti-burst');
             container.innerHTML = ''; // Clear previous burst
 
-            const colors = ['#FF006E', '#FFD60A', '#06FFA5', '#B388FF', '#880e4f'];
+            const colors = ['#FF6EB4', '#FFE135', '#3DDC84', '#74C7FF', '#FF8C42', '#C77DFF'];
 
             for (let i = 0; i < 100; i++) {
                 const piece = document.createElement('div');
@@ -843,7 +1472,55 @@
         // Action button handlers (stubs for backend)
         function handlePrint() {
             console.log('Print action triggered');
-            alert('Print functionality will be connected to backend');
+
+            const img          = document.getElementById('reveal-image');
+            const printerPanel = document.getElementById('printer-panel');
+            const revealText   = document.getElementById('reveal-text');
+            const subtitle     = document.getElementById('reveal-subtitle');
+            const btnGroup     = document.getElementById('button-group');
+            const successMsg   = document.getElementById('print-success-msg');
+
+            // Slide printer panel in from the right
+            printerPanel.classList.add('visible');
+
+            // Fade out text and buttons
+            setTimeout(() => {
+                revealText.style.transition = 'opacity 0.4s';
+                revealText.style.opacity = '0';
+                subtitle.style.transition = 'opacity 0.4s';
+                subtitle.style.opacity = '0';
+                btnGroup.style.transition = 'opacity 0.4s';
+                btnGroup.style.opacity = '0';
+            }, 400);
+
+            // Feed image into printer
+            setTimeout(() => {
+                img.classList.add('printing');
+            }, 600);
+
+            // Show success message once image is off-screen
+            setTimeout(() => {
+                successMsg.classList.add('visible');
+            }, 2500);
+        }
+
+        function resetPrintState() {
+            const img          = document.getElementById('reveal-image');
+            const printerPanel = document.getElementById('printer-panel');
+            const revealText   = document.getElementById('reveal-text');
+            const subtitle     = document.getElementById('reveal-subtitle');
+            const btnGroup     = document.getElementById('button-group');
+            const successMsg   = document.getElementById('print-success-msg');
+
+            img.classList.remove('printing');
+            printerPanel.classList.remove('visible');
+            successMsg.classList.remove('visible');
+            revealText.style.opacity = '';
+            revealText.style.transition = '';
+            subtitle.style.opacity = '';
+            subtitle.style.transition = '';
+            btnGroup.style.opacity = '';
+            btnGroup.style.transition = '';
         }
 
         function handleEmail() {
@@ -872,6 +1549,44 @@
             // Using a placeholder image - replace with actual generated image
             showReveal('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Crect fill="%23f0f0f0" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23666" font-family="Arial" font-size="24"%3EYour Coloring Page%3C/text%3E%3C/svg%3E', 'Sarah');
         }
+
+        // Reset session functions
+        function showResetModal() {
+            document.getElementById('reset-modal').classList.add('active');
+        }
+
+        function hideResetModal() {
+            document.getElementById('reset-modal').classList.remove('active');
+        }
+
+        async function confirmReset() {
+            hideResetModal();
+            try {
+                const response = await fetch('/reset', { method: 'POST' });
+                if (response.ok) {
+                    console.log('Reset triggered successfully');
+                    isInRevealMode = false;
+                    document.getElementById('transcript').innerHTML = '';
+                    showIdle();
+                } else {
+                    console.error('Reset failed:', response.status);
+                }
+            } catch (err) {
+                console.error('Reset request error:', err);
+                // Still reset the display locally even if the server call fails
+                isInRevealMode = false;
+                document.getElementById('transcript').innerHTML = '';
+                showIdle();
+            }
+        }
+
+        // Keyboard shortcut: Ctrl+Shift+R triggers reset
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                showResetModal();
+            }
+        });
 
         // WebSocket connection management
         function connectWebSocket() {

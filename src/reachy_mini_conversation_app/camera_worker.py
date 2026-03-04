@@ -79,6 +79,19 @@ class CameraWorker:
         self.is_head_tracking_enabled = enabled
         logger.info(f"Head tracking {'enabled' if enabled else 'disabled'}")
 
+    def reset_face_tracking_offsets(self) -> None:
+        """Immediately zero face tracking offsets and clear timing state.
+
+        Call on session reset so stale offsets from the previous visitor do not
+        bleed into the new session and cause IK collisions.
+        """
+        with self.face_tracking_lock:
+            self.face_tracking_offsets = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.last_face_detected_time = None
+        self.interpolation_start_time = None
+        self.interpolation_start_pose = None
+        logger.debug("Face tracking offsets reset to neutral")
+
     def start(self) -> None:
         """Start the camera worker loop in a thread."""
         self._stop_event.clear()

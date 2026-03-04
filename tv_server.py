@@ -2,6 +2,7 @@
 
 import asyncio
 import uvicorn
+import httpx
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -40,6 +41,20 @@ async def broadcast_event(request: Request):
     logger.info(f"Broadcasting event: {event_type}")
     await tv_broadcaster.broadcast(event_type, event_data)
 
+    return {"status": "ok"}
+
+@app.post("/reset")
+async def reset_session():
+    """Trigger a hard session reset on the main app and return the display to idle."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post("http://localhost:7860/reset")
+        logger.info("Reset forwarded to main app")
+    except Exception as e:
+        logger.warning(f"Could not reach main app for reset: {e}")
+
+    # Always broadcast idle so the TV display clears regardless
+    await tv_broadcaster.broadcast("idle", {})
     return {"status": "ok"}
 
 @app.websocket("/tv-display")

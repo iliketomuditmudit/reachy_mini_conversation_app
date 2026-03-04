@@ -1,9 +1,12 @@
-"""Custom tool: generate an image from a DALL-E prompt and display/save it."""
+"""Custom tool: generate a coloring-book image via Gemini and display/save it."""
+import base64
 import logging
 import os
+import time
 from typing import Any, Dict
 
-from openai import AsyncOpenAI
+from google import genai
+from google.genai import types
 
 from reachy_mini_conversation_app.tools.core_tools import Tool, ToolDependencies
 
@@ -11,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class GenerateImage(Tool):
-    """Generate an image via DALL-E from a prompt derived from the conversation."""
+    """Generate a coloring-book image via Gemini from a scene description."""
 
     name = "generate_image"
     description = (
-        "Generate an image using DALL-E based on a vivid scene prompt "
+        "Generate a coloring-book image using Gemini based on a scene description "
         "derived from the visitor's reflection. Call this ONLY once, at the "
         "very end of the coaching session, after delivering your closing reflection."
     )
@@ -25,8 +28,11 @@ class GenerateImage(Tool):
             "prompt": {
                 "type": "string",
                 "description": (
-                    "A vivid, specific DALL-E image prompt that captures the visitor's "
-                    "memory, feeling, mood, lighting, setting, and emotion."
+                    "Describe only the SCENE CONTENT: who is in the image (person description), "
+                    "what they are doing, and the simple setting (2-3 objects max). "
+                    "Do NOT include any style words -- the tool automatically applies "
+                    "the coloring book style. Example: "
+                    "'A bearded man in a striped shirt running through a field with two dogs and a big sun.'"
                 ),
             },
         },
@@ -34,64 +40,77 @@ class GenerateImage(Tool):
     }
 
     async def __call__(self, deps: ToolDependencies, **kwargs: Any) -> Dict[str, Any]:
-        """Call DALL-E to generate an image, save it locally, and return its path."""
+        """Call Gemini to generate a coloring-book image, save it, and return its data URI."""
         prompt = (kwargs.get("prompt") or "").strip()
         if not prompt:
             return {"error": "prompt must be a non-empty string"}
 
-        logger.info("Tool call: generate_image prompt=%s", prompt[:120])
+        # Prepend mandatory coloring book style prefix so the model's scene
+        # description is always rendered as a printable coloring page.
+        style_prefix = (
+            "Children's coloring book page. Thick bold black outlines only. "
+            "Pure white background. No color, no shading, no gradients, no texture. "
+            "Maximum 6 large simple objects. Simple circle eyes and curved line smile for faces. "
+            "Flat 2D line art. Scene: "
+        )
+        full_prompt = style_prefix + prompt
+        logger.info("Tool call: generate_image scene=%s", prompt[:120])
+        logger.debug("Full Gemini prompt: %s", full_prompt[:300])
 
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            return {"error": "OPENAI_API_KEY not set"}
+            return {"error": "GEMINI_API_KEY (or GOOGLE_API_KEY) not set"}
 
-        client = AsyncOpenAI(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
         try:
-            response = await client.images.generate(
-                model="dall-e-3",
-                prompt=prompt,
-                n=1,
-                size="1024x1024",
-                quality="standard",
-                response_format="url",
+            response = await client.aio.models.generate_content(
+                model="gemini-3.1-flash-image-preview",
+                contents=[full_prompt],
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                ),
             )
         except Exception as e:
-            logger.exception("DALL-E API call failed: %s", e)
-            return {"error": f"DALL-E API error: {e}"}
+            logger.exception("Gemini API call failed: %s", e)
+            return {"error": f"Gemini API error: {e}"}
 
-        image_url = response.data[0].url
-        revised_prompt = getattr(response.data[0], "revised_prompt", prompt)
-        logger.info("Image generated: %s", image_url)
+        # Extract the first image part from the response
+        image_bytes: bytes | None = None
+        mime_type = "image/png"
+        for part in response.candidates[0].content.parts:
+            if part.inline_data is not None:
+                image_bytes = part.inline_data.data
+                mime_type = part.inline_data.mime_type or "image/png"
+                break
 
-        # ------------------------------------------------------------------
-        # Optionally download and save the image locally next to this file
-        # ------------------------------------------------------------------
+        if image_bytes is None:
+            logger.error("Gemini returned no image part. Full response: %s", response)
+            return {"error": "Gemini returned no image in the response"}
+
+        logger.info("Image generated (%d bytes, %s)", len(image_bytes), mime_type)
+
+        # Save locally next to this file
         save_path: str | None = None
         try:
-            import httpx
-            import time
-
             output_dir = os.path.join(os.path.dirname(__file__), "generated_images")
             os.makedirs(output_dir, exist_ok=True)
-            filename = f"reflection_{int(time.time())}.png"
+            ext = mime_type.split("/")[-1].split(";")[0]  # e.g. "png" from "image/png"
+            filename = f"reflection_{int(time.time())}.{ext}"
             save_path = os.path.join(output_dir, filename)
-
-            async with httpx.AsyncClient(timeout=30) as http:
-                img_response = await http.get(image_url)
-                img_response.raise_for_status()
-                with open(save_path, "wb") as f:
-                    f.write(img_response.content)
-
+            with open(save_path, "wb") as f:
+                f.write(image_bytes)
             logger.info("Image saved to: %s", save_path)
-        except ImportError:
-            logger.warning("httpx not installed — image not saved locally (pip install httpx)")
         except Exception as e:
             logger.warning("Could not save image locally: %s", e)
 
+        # Build a data URI so the TV display (browser) can render it directly
+        # without needing to serve the local file over HTTP.
+        b64 = base64.b64encode(image_bytes).decode("utf-8")
+        data_uri = f"data:{mime_type};base64,{b64}"
+
         return {
             "status": "generated",
-            "image_url": image_url,
-            "revised_prompt": revised_prompt,
+            "image_url": data_uri,
             "saved_path": save_path,
         }
