@@ -2,6 +2,7 @@
 import base64
 import logging
 import os
+import random
 import time
 from typing import Any, Dict
 
@@ -9,6 +10,15 @@ from google import genai
 from google.genai import types
 
 from reachy_mini_conversation_app.tools.core_tools import Tool, ToolDependencies
+
+# Dances that look good during a ~10-20 s wait (calming / dreamy feel)
+_GENERATION_DANCES = [
+    "groovy_sway_and_roll",
+    "pendulum_swing",
+    "dizzy_spin",
+    "interwoven_spirals",
+    "side_to_side_sway",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +61,8 @@ class GenerateImage(Tool):
             "Children's coloring book page. Thick bold black outlines only. "
             "Pure white background. No color, no shading, no gradients, no texture. "
             "Maximum 6 large simple objects. Simple circle eyes and curved line smile for faces. "
-            "Flat 2D line art. Scene: "
+            "Flat 2D line art. No numbers, no letters, no words, no labels, no text of any kind anywhere in the image. "
+            "Scene: "
         )
         full_prompt = style_prefix + prompt
         logger.info("Tool call: generate_image scene=%s", prompt[:120])
@@ -60,6 +71,22 @@ class GenerateImage(Tool):
         api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
             return {"error": "GEMINI_API_KEY (or GOOGLE_API_KEY) not set"}
+
+        # While Gemini churns (~10-20 s), make Reachy dance so the visitor
+        # has something fun to watch instead of silence.
+        try:
+            from reachy_mini_dances_library.collection.dance import AVAILABLE_MOVES
+            from reachy_mini_conversation_app.dance_emotion_moves import DanceQueueMove
+
+            dance_name = random.choice(
+                [d for d in _GENERATION_DANCES if d in AVAILABLE_MOVES] or list(AVAILABLE_MOVES.keys())
+            )
+            # Queue the move twice so it fills the typical wait window
+            for _ in range(2):
+                deps.movement_manager.queue_move(DanceQueueMove(dance_name))
+            logger.info("Queued generation dance: %s x2", dance_name)
+        except Exception as dance_err:
+            logger.warning("Could not queue generation dance: %s", dance_err)
 
         client = genai.Client(api_key=api_key)
 

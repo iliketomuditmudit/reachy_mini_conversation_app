@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Idea Capsule Machine — Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:   #FAF6F0;
+      --ink:     #1C1C1C;
+      --amber:   #E8A838;
+      --sage:    #A8B89A;
+      --muted:   #8A8278;
+      --border:  rgba(28, 28, 28, 0.12);
+      --serif:   'Cormorant Garamond', Georgia, serif;
+      --sans:    'DM Sans', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Grain overlay ─────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 128px;
+    }
+
+    /* ─── Navigation ─────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(250, 246, 240, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .nav-logo span {
+      color: var(--amber);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(28, 28, 28, 0.06);
+      border-radius: 100px;
+      padding: 4px;
+    }
+
+    .nav-tab {
+      padding: 7px 22px;
+      border-radius: 100px;
+      border: none;
+      background: transparent;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tab.active {
+      background: var(--ink);
+      color: var(--cream);
+    }
+
+    .nav-tab:hover:not(.active) {
+      color: var(--ink);
+    }
+
+    .nav-status {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .nav-status .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--sage);
+      margin-right: 6px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ─── Sections ─────────────────────────────────────────── */
+    .section {
+      display: none;
+      min-height: 100vh;
+      padding-top: 80px;
+    }
+
+    .section.active { display: block; }
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* GALLERY SECTION                                            */
+    /* ═══════════════════════════════════════════════════════════ */
+
+    #gallery-section {
+      background: var(--cream);
+    }
+
+    /* ─── Hero ───────────────────────────────────────── */
+    .gallery-hero {
+      padding: 80px 48px 64px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: end;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 300;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--amber);
+    }
+
+    .hero-rule {
+      width: 48px;
+      height: 1px;
+      background: var(--ink);
+      margin: 32px 0;
+    }
+
+    .hero-manifesto {
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--muted);
+      max-width: 380px;
+    }
+
+    .hero-quote-block {
+      padding: 40px;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--amber);
+      background: rgba(232, 168, 56, 0.04);
+      position: relative;
+    }
+
+    .hero-quote-mark {
+      font-family: var(--serif);
+      font-size: 5rem;
+      line-height: 0.6;
+      color: var(--amber);
+      opacity: 0.35;
+      position: absolute;
+      top: 24px;
+      left: 28px;
+    }
+
+    .hero-quote {
+      font-family: var(--serif);
+      font-size: 1.08rem;
+      line-height: 1.7;
+      font-style: italic;
+      color: var(--ink);
+      padding-top: 20px;
+    }
+
+    .hero-quote-attr {
+      margin-top: 20px;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ─── Gallery Divider ───────────────────────────────────── */
+    .gallery-divider {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 0 48px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .gallery-divider-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .gallery-divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .gallery-count {
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    /* ─── Tilt Grid ───────────────────────────────────────── */
+    .tilt-grid {
+      padding: 0 48px 120px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 32px;
+    }
+
+    .tilt-card {
+      position: relative;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.08s linear, box-shadow 0.3s ease;
+      will-change: transform;
+    }
+
+    .tilt-card:not(:hover) {
+      transform: perspective(800px) rotateX(0deg) rotateY(0deg) !important;
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+    }
+
+    .tilt-card-inner {
+      background: #fff;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tilt-card-inner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.15) 0%,
+        transparent 50%,
+        rgba(0,0,0,0.04) 100%
+      );
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .tilt-card:hover .tilt-card-inner::after { opacity: 1; }
+
+    .tilt-card:hover {
+      box-shadow:
+        0 20px 60px rgba(28,28,28,0.12),
+        0 4px 16px rgba(28,28,28,0.08);
+    }
+
+    .tilt-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(0.05) contrast(1.02);
+      transition: transform 0.4s ease;
+    }
+
+    .tilt-card:hover img {
+      transform: scale(1.02);
+    }
+
+    .tilt-card-caption {
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tilt-card-date {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .tilt-card-num {
+      font-family: var(--serif);
+      font-size: 0.85rem;
+      font-style: italic;
+      color: var(--sage);
+    }
+
+    /* ─── Lightbox ───────────────────────────────────────── */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(20, 18, 16, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+
+    .lightbox.open { display: flex; }
+
+    .lightbox img {
+      max-width: 85vw;
+      max-height: 85vh;
+      object-fit: contain;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.5);
+      cursor: default;
+      animation: lb-in 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @keyframes lb-in {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 28px; right: 36px;
+      font-size: 1.4rem;
+      color: rgba(250,246,240,0.6);
+      cursor: pointer;
+      background: none; border: none;
+      transition: color 0.2s;
+      font-family: var(--sans);
+      font-weight: 300;
+    }
+
+    .lightbox-close:hover { color: var(--cream); }
+
+    /* ═══════════════════════════════════════════════════════════ */
+    /* PRINT QUEUE SECTION                                        */
+    /* ═══════════════════════════════════════════════════════════ */
+
+    #print-section {
+      background: var(--cream);
+    }
+
+    .print-header {
+      padding: 56px 48px 40px;
+      max-width: 900px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .print-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .print-title {
+      font-family: var(--serif);
+      font-size: 2.2rem;
+      font-weight: 300;
+      color: var(--ink);
+    }
+
+    .print-subtitle {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .print-list {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 48px 80px;
+    }
+
+    .print-item {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      gap: 24px;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s ease;
+    }
+
+    .print-item:hover {
+      background: rgba(232, 168, 56, 0.04);
+      margin: 0 -24px;
+      padding: 20px 24px;
+      border-radius: 4px;
+    }
+
+    .print-thumb {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .print-meta {}
+
+    .print-num {
+      font-family: var(--serif);
+      font-size: 0.75rem;
+      font-style: italic;
+      color: var(--sage);
+      margin-bottom: 4px;
+    }
+
+    .print-filename {
+      font-size: 0.82rem;
+      color: var(--ink);
+      letter-spacing: 0.01em;
+      margin-bottom: 4px;
+    }
+
+    .print-date {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .print-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border: 1.5px solid var(--ink);
+      background: transparent;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .print-btn:hover {
+      background: var(--ink);
+      color: var(--cream);
+    }
+
+    .print-btn svg {
+      width: 13px; height: 13px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Empty / Loading states ───────────────────────────── */
+    .state-empty {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--muted);
+    }
+
+    .state-empty p {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-style: italic;
+    }
+
+    .state-empty small {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+    }
+
+    /* ─── Print-only styles ────────────────────────────────── */
+    @media print {
+      .print-only-image {
+        width: 100%;
+        height: 100vh;
+        object-fit: contain;
+        display: block;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">The Idea Capsule <span>Machine</span></a>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('gallery')">Gallery</button>
+      <button class="nav-tab" onclick="switchTab('print')">Print Queue</button>
+    </div>
+    <div class="nav-status">
+      <span class="dot"></span>
+      <span id="status-text">Loading…</span>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- GALLERY SECTION                           -->
+  <!-- ══════════════════════════════════════════ -->
+  <section id="gallery-section" class="section active">
+
+    <div class="gallery-hero">
+      <!-- Left: Manifesto -->
+      <div>
+        <p class="hero-eyebrow">An Exhibition of Reflections</p>
+        <h1 class="hero-title">
+          Humans flourish<br/>
+          when we <em>make</em> things.
+        </h1>
+        <div class="hero-rule"></div>
+        <p class="hero-manifesto">
+          AI has made coding, building, learning, and creating more accessible than ever.
+          It is also causing tremendous social and economic anxiety. Rather than be afraid,
+          we challenge people to think about how these tools can re-introduce paths not taken —
+          or bring joy rather than fear.
+          <br/><br/>
+          Each image here is a coloring book page drawn by AI from someone's reflection.
+          A moment of making, captured.
+        </p>
+      </div>
+
+      <!-- Right: Quote -->
+      <div class="hero-quote-block">
+        <span class="hero-quote-mark">"</span>
+        <p class="hero-quote">
+          People say you have to find happiness. But happiness isn't something you have to find,
+          it was always there. Children are happy. But then they get buried under layers of
+          societal expectations, career commitments, "shoulds." So the key, then, to happiness
+          is to strip all these things away to uncover the happy child underneath.
+        </p>
+        <p class="hero-quote-attr">— On rediscovery</p>
+      </div>
+    </div>
+
+    <div class="gallery-divider">
+      <span class="gallery-divider-label">Reflections captured</span>
+      <div class="gallery-divider-line"></div>
+      <span class="gallery-count" id="gallery-count">—</span>
+    </div>
+
+    <div class="tilt-grid" id="tilt-grid">
+      <div class="state-empty"><p>Waiting for reflections…</p><small>Images will appear as they are generated</small></div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- PRINT SECTION                             -->
+  <!-- ══════════════════════════════════════════ -->
+  <section id="print-section" class="section">
+
+    <div class="print-header">
+      <p class="print-eyebrow">Print Queue</p>
+      <h2 class="print-title">Ready to print</h2>
+      <p class="print-subtitle">
+        Images sorted newest first. Click <strong>Print</strong> to open the image in a print dialog.
+      </p>
+    </div>
+
+    <div class="print-list" id="print-list">
+      <div class="state-empty"><p>No images yet.</p><small>Generated images will appear here</small></div>
+    </div>
+
+  </section>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()" />
+  </div>
+
+  <script>
+    /* ─── State ──────────────────────────────────────────────── */
+    let images = [];
+
+    /* ─── Tab switching ──────────────────────────────────────── */
+    function switchTab(tab) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById(tab + '-section').classList.add('active');
+      document.querySelectorAll('.nav-tab').forEach(b => {
+        if (b.textContent.toLowerCase().includes(tab === 'gallery' ? 'gallery' : 'print')) {
+          b.classList.add('active');
+        }
+      });
+    }
+
+    /* ─── Fetch images ───────────────────────────────────────── */
+    async function loadImages() {
+      try {
+        const res = await fetch('/images');
+        if (!res.ok) throw new Error('fetch failed');
+        const data = await res.json();
+        images = data.sort((a, b) => b.created_at_unix - a.created_at_unix);
+        renderGallery();
+        renderPrintQueue();
+        updateStatus();
+      } catch (e) {
+        console.error('Could not load images:', e);
+        document.getElementById('status-text').textContent = 'Could not reach server';
+      }
+    }
+
+    /* ─── Render gallery ─────────────────────────────────────── */
+    function renderGallery() {
+      const grid = document.getElementById('tilt-grid');
+      const count = document.getElementById('gallery-count');
+      count.textContent = images.length + (images.length === 1 ? ' image' : ' images');
+
+      if (images.length === 0) {
+        grid.innerHTML = '<div class="state-empty"><p>Waiting for reflections…</p><small>Images will appear as they are generated</small></div>';
+        return;
+      }
+
+      grid.innerHTML = images.map((img, i) => `
+        <div class="tilt-card" data-url="${img.url}" onclick="openLightbox('${img.url}')">
+          <div class="tilt-card-inner">
+            <img src="${img.url}" alt="Reflection ${i + 1}" loading="lazy" />
+            <div class="tilt-card-caption">
+              <span class="tilt-card-date">${formatDate(img.created_at_unix)}</span>
+              <span class="tilt-card-num">No. ${String(images.length - i).padStart(2, '0')}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Attach tilt listeners
+      grid.querySelectorAll('.tilt-card').forEach(attachTilt);
+    }
+
+    /* ─── Render print queue ─────────────────────────────────── */
+    function renderPrintQueue() {
+      const list = document.getElementById('print-list');
+
+      if (images.length === 0) {
+        list.innerHTML = '<div class="state-empty"><p>No images yet.</p><small>Generated images will appear here</small></div>';
+        return;
+      }
+
+      list.innerHTML = images.map((img, i) => `
+        <div class="print-item">
+          <img class="print-thumb" src="${img.url}" alt="Reflection ${i + 1}" loading="lazy" />
+          <div class="print-meta">
+            <p class="print-num">No. ${String(images.length - i).padStart(2, '0')}</p>
+            <p class="print-filename">${img.filename}</p>
+            <p class="print-date">${formatDateLong(img.created_at_unix)}</p>
+          </div>
+          <button class="print-btn" onclick="printImage('${img.url}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Print
+          </button>
+        </div>
+      `).join('');
+    }
+
+    /* ─── Print a single image ───────────────────────────────── */
+    function printImage(url) {
+      const win = window.open('', '_blank');
+      win.document.write(`
+        <!DOCTYPE html><html><head>
+        <style>
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body { background:#fff; }
+          img { width:100vw; height:100vh; object-fit:contain; display:block; }
+          @media print { img { width:100%; height:100%; } }
+        </style>
+        </head><body>
+        <img src="${url}" onload="window.print(); window.close();" />
+        </body></html>
+      `);
+      win.document.close();
+    }
+
+    /* ─── Lightbox ───────────────────────────────────────────── */
+    function openLightbox(url) {
+      document.getElementById('lightbox-img').src = url;
+      document.getElementById('lightbox').classList.add('open');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('open');
+      document.getElementById('lightbox-img').src = '';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    /* ─── Tilt effect ────────────────────────────────────────── */
+    function attachTilt(card) {
+      const MAX_TILT = 14;
+
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = (e.clientX - cx) / (rect.width / 2);
+        const dy = (e.clientY - cy) / (rect.height / 2);
+        const rotY =  dx * MAX_TILT;
+        const rotX = -dy * MAX_TILT;
+        card.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.02)`;
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
+      });
+    }
+
+    /* ─── Status ─────────────────────────────────────────────── */
+    function updateStatus() {
+      const el = document.getElementById('status-text');
+      el.textContent = `${images.length} image${images.length !== 1 ? 's' : ''} · refreshes every 30s`;
+    }
+
+    /* ─── Date formatting ────────────────────────────────────── */
+    function formatDate(unix) {
+      const d = new Date(unix * 1000);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatDateLong(unix) {
+      const d = new Date(unix * 1000);
+      return d.toLocaleString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+    }
+
+    /* ─── Auto-refresh ───────────────────────────────────────── */
+    loadImages();
+    setInterval(loadImages, 30000);
+  </script>
+</body>
+</html>

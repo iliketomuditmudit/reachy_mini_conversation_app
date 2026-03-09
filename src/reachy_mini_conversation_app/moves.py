@@ -281,6 +281,9 @@ class MovementManager:
         self._last_set_target_err = 0.0
         self._set_target_err_interval = 1.0  # seconds between error logs
         self._set_target_err_suppressed = 0
+        # Track consecutive set_target failures to detect robot disconnection
+        self._consecutive_set_target_failures = 0
+        self._robot_disconnected = False  # set after sustained failures
 
         # Cross-thread signalling
         self._command_queue: "Queue[Tuple[str, Any]]" = Queue()
@@ -345,6 +348,10 @@ class MovementManager:
         aware of manual motions. Thread-safe via the command queue.
         """
         self._command_queue.put(("set_moving_state", duration))
+
+    def is_robot_connected(self) -> bool:
+        """Return False when sustained set_target failures indicate the robot is offline."""
+        return not self._robot_disconnected
 
     def is_idle(self) -> bool:
         """Return True when the robot has been inactive longer than the idle delay."""
@@ -637,6 +644,11 @@ class MovementManager:
         try:
             self.current_robot.set_target(head=head, antennas=antennas, body_yaw=body_yaw)
         except Exception as e:
+            self._consecutive_set_target_failures += 1
+            # Mark as disconnected after ~5 seconds of sustained failures (500 ticks at 100Hz)
+            if self._consecutive_set_target_failures >= 500 and not self._robot_disconnected:
+                self._robot_disconnected = True
+                logger.error("Robot appears disconnected (sustained set_target failures). Idle signals suppressed.")
             now = self._now()
             if now - self._last_set_target_err >= self._set_target_err_interval:
                 msg = f"Failed to set robot target: {e}"
@@ -648,6 +660,12 @@ class MovementManager:
             else:
                 self._set_target_err_suppressed += 1
         else:
+            # Successful command — reset disconnect tracking
+            if self._consecutive_set_target_failures > 0:
+                self._consecutive_set_target_failures = 0
+            if self._robot_disconnected:
+                self._robot_disconnected = False
+                logger.info("Robot reconnected.")
             with self._status_lock:
                 self._last_commanded_pose = clone_full_body_pose((head, antennas, body_yaw))
 

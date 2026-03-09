@@ -60,3 +60,6 @@ cache/
 # User-created personalities (managed by UI)
 src/reachy_mini_conversation_app/profiles/user_personalities/
 src/reachy_mini_conversation_app/profiles/**/generated_images/
+
+# Exhibition visitor conversation logs (contain personal data)
+conversation_logs/

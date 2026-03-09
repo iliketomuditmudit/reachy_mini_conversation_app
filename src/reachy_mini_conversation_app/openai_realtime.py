@@ -17,6 +17,7 @@ from scipy.signal import resample
 from websockets.exceptions import ConnectionClosedError
 
 from reachy_mini_conversation_app.config import config
+from reachy_mini_conversation_app.conversation_logger import ConversationLogger
 from reachy_mini_conversation_app.prompts import get_session_voice, get_session_instructions
 from reachy_mini_conversation_app.tools.core_tools import (
     ToolDependencies,
@@ -44,6 +45,8 @@ async def broadcast_to_tv(event_type: str, data: dict) -> None:
 
 class OpenaiRealtimeHandler(AsyncStreamHandler):
     """An OpenAI realtime handler for fastrtc Stream."""
+
+    backend_name = "openai"
 
     def __init__(self, deps: ToolDependencies, gradio_mode: bool = False, instance_path: Optional[str] = None):
         """Initialize the handler."""
@@ -84,10 +87,35 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
         self._shutdown_requested: bool = False
         self._connected_event: asyncio.Event = asyncio.Event()
         self._post_session_restart_task: asyncio.Task[None] | None = None
+        self._session_generation: int = 0  # incremented each time a session starts; guards stale finally-blocks
+
+        # Conversation logger — writes JSONL + text transcripts to ./conversation_logs/
+        self._conversation_logger = ConversationLogger()
+
+        # Camera call counter — prevents the model from re-triggering Step 1
+        # by calling camera multiple times.  Allowed calls per session:
+        #   1st → Step 1 ball check
+        #   2nd → Step 4 appearance capture
+        #   3rd+ → blocked with a redirect message
+        self._camera_call_count: int = 0
+
+        # Post-image guard — once generate_image has been dispatched,
+        # block ALL subsequent tool calls (dance, do_nothing, etc.)
+        self._image_generated: bool = False
+
+        # Closing-line guard — once the model has been asked to say its
+        # closing line, suppress any further response.create calls so we
+        # never get a second closing (race condition from same-batch tool
+        # calls or a later idle do_nothing).
+        self._closing_line_sent: bool = False
 
     def copy(self) -> "OpenaiRealtimeHandler":
         """Create a copy of the handler."""
         return OpenaiRealtimeHandler(self.deps, self.gradio_mode, self.instance_path)
+
+    def is_api_key_configured(self) -> bool:
+        """Return True if OPENAI_API_KEY is available."""
+        return bool(config.OPENAI_API_KEY and str(config.OPENAI_API_KEY).strip())
 
     async def apply_personality(self, profile: str | None) -> str:
         """Apply a new personality (profile) at runtime if possible.
@@ -184,6 +212,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
 
         max_attempts = 3
         for attempt in range(1, max_attempts + 1):
+            owned_generation = self._session_generation
             try:
                 await self._run_realtime_session()
                 # Normal exit from the session, stop retrying
@@ -201,12 +230,16 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                     continue
                 raise
             finally:
-                # never keep a stale reference
-                self.connection = None
-                try:
-                    self._connected_event.clear()
-                except Exception:
-                    pass
+                # Only wipe the connection reference if no newer session has taken over.
+                # _restart_session increments _session_generation before setting self.connection,
+                # so if the counter has moved on, a fresh session is already live and we must
+                # not overwrite its reference.
+                if self._session_generation == owned_generation:
+                    self.connection = None
+                    try:
+                        self._connected_event.clear()
+                    except Exception:
+                        pass
 
     async def _delayed_restart(self, delay: float) -> None:
         """Restart the session after a delay. Used to reset after a completed exhibition session."""
@@ -243,6 +276,11 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
             except Exception as e:
                 logger.warning("Failed to reset movement state during session restart: %s", e)
 
+            # Reset session-level guards for the new session
+            self._camera_call_count = 0
+            self._image_generated = False
+            self._closing_line_sent = False
+
             # Ensure we have a client (start_up must have run once)
             if getattr(self, "client", None) is None:
                 logger.warning("Cannot restart: OpenAI client not initialized yet.")
@@ -259,11 +297,15 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                 logger.info("Realtime session restarted and connected.")
             except asyncio.TimeoutError:
                 logger.warning("Realtime session restart timed out; continuing in background.")
+
+            # Start a fresh log file for the new session
+            self._conversation_logger.new_session()
         except Exception as e:
             logger.warning("_restart_session failed: %s", e)
 
     async def _run_realtime_session(self) -> None:
         """Establish and manage a single realtime session."""
+        my_generation = self._session_generation
         async with self.client.realtime.connect(model=config.MODEL_NAME) as conn:
             try:
                 await conn.session.update(
@@ -312,24 +354,28 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
             await broadcast_to_tv("idle", {})
 
             # Manage event received from the openai server
+            self._session_generation += 1
+            my_generation = self._session_generation
             self.connection = conn
             try:
                 self._connected_event.set()
             except Exception:
                 pass
+
             async for event in self.connection:
                 logger.debug(f"OpenAI event: {event.type}")
                 if event.type == "input_audio_buffer.speech_started":
-                    if hasattr(self, "_clear_queue") and callable(self._clear_queue):
+                    q_size = self.output_queue.qsize()
+                    logger.info(">> speech_started (queue size=%d)", q_size)
+                    if q_size > 0 and hasattr(self, "_clear_queue") and callable(self._clear_queue):
                         self._clear_queue()
                     if self.deps.head_wobbler is not None:
                         self.deps.head_wobbler.reset()
                     self.deps.movement_manager.set_listening(True)
-                    logger.debug("User speech started")
 
                 if event.type == "input_audio_buffer.speech_stopped":
                     self.deps.movement_manager.set_listening(False)
-                    logger.debug("User speech stopped - server will auto-commit with VAD")
+                    logger.info(">> speech_stopped")
 
                 if event.type in (
                     "response.audio.done",  # GA
@@ -337,14 +383,25 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                     "response.audio.completed",  # legacy (for safety)
                     "response.completed",  # text-only completion
                 ):
-                    logger.debug("response completed")
+                    logger.info(">> %s", event.type)
 
                 if event.type == "response.created":
-                    logger.debug("Response created")
+                    resp = getattr(event, "response", None)
+                    resp_id = getattr(resp, "id", "?")
+                    logger.info(">> response.created id=%s", resp_id)
 
                 if event.type == "response.done":
-                    # Doesn't mean the audio is done playing
-                    logger.debug("Response done")
+                    # Extract response details to diagnose empty responses
+                    resp = getattr(event, "response", None)
+                    resp_status = getattr(resp, "status", "unknown")
+                    resp_status_details = getattr(resp, "status_details", None)
+                    resp_output = getattr(resp, "output", [])
+                    resp_usage = getattr(resp, "usage", None)
+                    logger.info(
+                        ">> response.done status=%s details=%s outputs=%d usage=%s (queue size=%d)",
+                        resp_status, resp_status_details, len(resp_output) if resp_output else 0,
+                        resp_usage, self.output_queue.qsize(),
+                    )
 
                 # Handle partial transcription (user speaking in real-time)
                 if event.type == "conversation.item.input_audio_transcription.partial":
@@ -369,7 +426,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
 
                 # Handle completed transcription (user finished speaking)
                 if event.type == "conversation.item.input_audio_transcription.completed":
-                    logger.debug(f"User transcript: {event.transcript}")
+                    logger.info(">> User transcript: %s", event.transcript)
 
                     # Cancel any pending partial emission
                     if self.partial_transcript_task and not self.partial_transcript_task.done():
@@ -379,6 +436,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                         except asyncio.CancelledError:
                             pass
 
+                    self._conversation_logger.log("user", event.transcript)
                     await self.output_queue.put(AdditionalOutputs({"role": "user", "content": event.transcript}))
 
                     # Broadcast to TV display
@@ -389,7 +447,8 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
 
                 # Handle assistant transcription
                 if event.type in ("response.audio_transcript.done", "response.output_audio_transcript.done"):
-                    logger.debug(f"Assistant transcript: {event.transcript}")
+                    logger.info(">> Assistant transcript: %s", event.transcript)
+                    self._conversation_logger.log("assistant", event.transcript)
                     await self.output_queue.put(AdditionalOutputs({"role": "assistant", "content": event.transcript}))
 
                     # Broadcast to TV display
@@ -403,7 +462,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                     if self.deps.head_wobbler is not None:
                         self.deps.head_wobbler.feed(event.delta)
                     self.last_activity_time = asyncio.get_event_loop().time()
-                    logger.debug("last activity time updated to %s", self.last_activity_time)
+                    logger.info(">> audio.delta chunk (queue size=%d)", self.output_queue.qsize())
                     await self.output_queue.put(
                         (
                             self.output_sample_rate,
@@ -413,6 +472,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
 
                 # ---- tool-calling plumbing ----
                 if event.type == "response.function_call_arguments.done":
+                    logger.info(">> tool call: %s", getattr(event, "name", "unknown"))
                     tool_name = getattr(event, "name", None)
                     args_json_str = getattr(event, "arguments", None)
                     call_id = getattr(event, "call_id", None)
@@ -421,17 +481,107 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                         logger.error("Invalid tool call: tool_name=%s, args=%s", tool_name, args_json_str)
                         continue
 
+                    # ── Idle tool call guard ──────────────────────────
+                    # Idle signals (sent by send_idle_signal) should ALWAYS
+                    # be dispatched silently — even after the session is
+                    # complete.  Check this BEFORE the post-image guard so a
+                    # late idle do_nothing can't accidentally trigger a second
+                    # closing line.
+                    if self.is_idle_tool_call:
+                        self.is_idle_tool_call = False
+                        try:
+                            await dispatch_tool_call(tool_name, args_json_str, self.deps)
+                        except Exception as e:
+                            logger.warning("Idle tool call '%s' failed: %s", tool_name, e)
+                        if isinstance(call_id, str):
+                            await self.connection.conversation.item.create(
+                                item={
+                                    "type": "function_call_output",
+                                    "call_id": call_id,
+                                    "output": json.dumps({"status": "ok"}),
+                                },
+                            )
+                        logger.debug("Idle tool call '%s' dispatched silently", tool_name)
+                        continue
+
+                    # ── Post-image guard ──────────────────────────────
+                    # Once generate_image has completed, block ALL further
+                    # tool calls (dance, do_nothing, play_emotion, etc.)
+                    # so the model can only deliver its closing line.
+                    if self._image_generated:
+                        tool_result = {
+                            "message": (
+                                "The session is complete. Do not call any more tools. "
+                                "Say your closing line and stop."
+                            ),
+                        }
+                        logger.info(
+                            "Blocked post-image tool call: %s (session complete)", tool_name
+                        )
+
+                        # Send the blocked result back so the model can respond
+                        if isinstance(call_id, str):
+                            await self.connection.conversation.item.create(
+                                item={
+                                    "type": "function_call_output",
+                                    "call_id": call_id,
+                                    "output": json.dumps(tool_result),
+                                },
+                            )
+                        # Only fire response.create ONCE — subsequent blocked
+                        # tool calls from the same response batch would race
+                        # against the already-in-flight closing response and
+                        # cause 'conversation_already_has_active_response' errors.
+                        if not self._closing_line_sent:
+                            self._closing_line_sent = True
+                            await self.connection.response.create(
+                                response={
+                                    "instructions": (
+                                        "The session is complete. Say your brief closing line "
+                                        "mentioning the coloring station and stop. No more tools."
+                                    ),
+                                },
+                            )
+                        continue
+
+                    # Guard against excessive camera calls — the model tends to
+                    # re-trigger Step 1 by calling camera again mid-session.
+                    _camera_blocked = False
+                    if tool_name == "camera":
+                        self._camera_call_count += 1
+                        if self._camera_call_count > 2:
+                            _camera_blocked = True
+                            tool_result = {
+                                "message": (
+                                    "Camera already used. You have completed the ball check. "
+                                    "Continue with your current conversation step — do not repeat any previous step."
+                                ),
+                            }
+                            logger.info(
+                                "Blocked excessive camera call (count=%d)", self._camera_call_count
+                            )
+
                     # Broadcast generating state for image generation
                     if tool_name == "generate_image":
+                        self._image_generated = True
                         await broadcast_to_tv("generating", {})
 
-                    try:
-                        tool_result = await dispatch_tool_call(tool_name, args_json_str, self.deps)
-                        logger.debug("Tool '%s' executed successfully", tool_name)
-                        logger.debug("Tool result: %s", tool_result)
-                    except Exception as e:
-                        logger.error("Tool '%s' failed", tool_name)
-                        tool_result = {"error": str(e)}
+                    if not _camera_blocked:
+                        try:
+                            tool_result = await dispatch_tool_call(tool_name, args_json_str, self.deps)
+                            logger.debug("Tool '%s' executed successfully", tool_name)
+                            logger.debug("Tool result: %s", tool_result)
+                        except Exception as e:
+                            logger.error("Tool '%s' failed", tool_name)
+                            tool_result = {"error": str(e)}
+
+                    # Log tool call (skip b64 image data to keep logs readable)
+                    _loggable = {k: v for k, v in tool_result.items() if k != "b64_im"}
+                    self._conversation_logger.log(
+                        "tool",
+                        json.dumps(_loggable, ensure_ascii=False),
+                        metadata={"tool_name": tool_name},
+                    )
 
                     # send the tool result back
                     if isinstance(call_id, str):
@@ -453,7 +603,7 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                         ),
                     )
 
-                    if tool_name == "camera" and "b64_im" in tool_result:
+                    if tool_name == "camera" and not _camera_blocked and "b64_im" in tool_result:
                         # use raw base64, don't json.dumps (which adds quotes)
                         b64_im = tool_result["b64_im"]
                         if not isinstance(b64_im, str):
@@ -492,10 +642,11 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                             )
 
                     if tool_name == "generate_image" and tool_result.get("status") == "generated":
-                        # Prefer image_url (accessible by browser) over saved_path (local file)
                         image_source = tool_result.get("image_url") or tool_result.get("saved_path")
+                        # gr.Image requires a file path, not a base64 data URI
+                        gradio_image_source = tool_result.get("saved_path") or image_source
                         if image_source:
-                            img = gr.Image(value=image_source)
+                            img = gr.Image(value=gradio_image_source)
                             await self.output_queue.put(
                                 AdditionalOutputs({"role": "assistant", "content": img})
                             )
@@ -517,14 +668,63 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                             )
                             logger.info("Scheduled post-session auto-restart in 45s")
 
-                    # if this tool call was triggered by an idle signal, don't make the robot speak
-                    # for other tool calls, let the robot reply out loud
-                    if self.is_idle_tool_call:
-                        self.is_idle_tool_call = False
-                    else:
+                    # Prompt the model to continue after each tool call.
+                    # (Idle tool calls are handled at the top with an early continue.)
+                    if tool_name == "generate_image":
+                        # Image is done — only the closing line should follow.
+                        # Mark _closing_line_sent so any same-batch tool calls
+                        # (dance, play_emotion) that arrive milliseconds later
+                        # don't fire a second response.create.
+                        self._closing_line_sent = True
                         await self.connection.response.create(
                             response={
-                                "instructions": "Use the tool result just returned and answer concisely in speech.",
+                                "instructions": (
+                                    "The image has been created and shown to the visitor. "
+                                    "Say a warm, brief closing line that tells them to head to the coloring station to fill it in. "
+                                    "Under 20 words. Do not call any more tools."
+                                ),
+                            },
+                        )
+                    elif tool_name == "camera" and self._camera_call_count == 1:
+                        # First camera call = Step 1 ball check.
+                        # Force the model to use the EXACT scripted lines — no
+                        # improvisation, no preamble, no "I don't see a ball."
+                        await self.connection.response.create(
+                            response={
+                                "instructions": (
+                                    "Based on the camera result, say EXACTLY one of these two lines — word for word, nothing else:\n"
+                                    "• If you see a ball: \"Oh, you've got a ball! Go ahead and open it -- there's something inside for you.\"\n"
+                                    "• If you do NOT see a ball: \"Head over to the gumball machine and grab yourself a ball. I'll be right here.\"\n"
+                                    "Do NOT add any other words before or after. Do NOT describe what you see."
+                                ),
+                            },
+                        )
+                    elif tool_name == "camera" and self._camera_call_count == 2:
+                        # Second camera call = Step 4 appearance capture.
+                        # The transition phrase has already been spoken (before
+                        # the camera call).  Now just generate the image silently.
+                        await self.connection.response.create(
+                            response={
+                                "instructions": (
+                                    "You are in Step 4. This camera was for the person's appearance only. "
+                                    "Steps 0-3 are finished — do NOT say 'Oh, you've got a ball!' or anything from earlier steps. "
+                                    "Do NOT speak. Immediately call generate_image with the image prompt."
+                                ),
+                            },
+                        )
+                    else:
+                        # For all other tools (dance, play_emotion, etc.):
+                        # Do NOT ask the model to "answer about the tool result" — that
+                        # causes unnecessary speech ("Here's a groove for you!") and
+                        # extra round-trips that add latency.  Instead, nudge it to
+                        # keep moving through its scripted steps.
+                        await self.connection.response.create(
+                            response={
+                                "instructions": (
+                                    "Continue following your step-by-step conversation instructions. "
+                                    "Never repeat a completed step. "
+                                    "Do not describe or comment on actions you just performed."
+                                ),
                             },
                         )
 
@@ -592,16 +792,20 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
         # sends to the stream the stuff put in the output queue by the openai event handler
         # This is called periodically by the fastrtc Stream
 
-        # Handle idle
+        # Handle idle — skip if the robot has lost its network connection
         idle_duration = asyncio.get_event_loop().time() - self.last_activity_time
         if idle_duration > 15.0 and self.deps.movement_manager.is_idle():
-            try:
-                await self.send_idle_signal(idle_duration)
-            except Exception as e:
-                logger.warning("Idle signal skipped (connection closed?): %s", e)
-                return None
+            if not self.deps.movement_manager.is_robot_connected():
+                # Robot is offline; reset timer so we don't spam idle signals into the void
+                self.last_activity_time = asyncio.get_event_loop().time()
+            else:
+                try:
+                    await self.send_idle_signal(idle_duration)
+                except Exception as e:
+                    logger.warning("Idle signal skipped (connection closed?): %s", e)
+                    return None
 
-            self.last_activity_time = asyncio.get_event_loop().time()  # avoid repeated resets
+                self.last_activity_time = asyncio.get_event_loop().time()  # avoid repeated resets
 
         return await wait_for_item(self.output_queue)  # type: ignore[no-any-return]
 
@@ -625,6 +829,9 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
                 logger.debug(f"connection.close() ignored: {e}")
             finally:
                 self.connection = None
+
+        # Flush conversation log files
+        self._conversation_logger.close()
 
         # Clear any remaining items in the output queue
         while not self.output_queue.empty():

@@ -580,9 +580,6 @@
             color: var(--licorice);
             text-align: center;
             margin-top: 40px;
-            text-decoration: underline wavy var(--bubblegum);
-            text-underline-offset: 10px;
-            text-decoration-thickness: 3px;
             position: relative;
             z-index: 5;
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -727,44 +724,6 @@
             margin-bottom: 36px;
         }
 
-        .button-group {
-            display: flex;
-            gap: 30px;
-        }
-
-        .action-button {
-            padding: 20px 50px;
-            font-family: 'Fredoka One', cursive;
-            font-size: 30px;
-            border: 4px solid var(--licorice);
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 5px 5px 0 var(--licorice);
-            transition: transform 0.1s, box-shadow 0.1s;
-            text-transform: none;
-            letter-spacing: 0;
-        }
-
-        .action-button.print {
-            background: var(--bubblegum);
-            color: var(--white);
-        }
-
-        .action-button.email {
-            background: var(--mint);
-            color: var(--licorice);
-        }
-
-        .action-button:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 7px 7px 0 var(--licorice);
-        }
-
-        .action-button:active {
-            transform: translate(2px, 2px);
-            box-shadow: 3px 3px 0 var(--licorice);
-        }
-
         .print-success-msg {
             display: none;
             font-family: 'Fredoka One', cursive;
@@ -774,6 +733,10 @@
             padding: 16px 40px;
             border-radius: 50px;
             text-align: center;
+            max-width: calc(100vw - 120px); /* stay inside both 28px candy borders + buffer */
+            white-space: normal;
+            word-break: break-word;
+            margin-bottom: 40px; /* clear the 28px bottom candy border */
         }
 
         .print-success-msg.visible {
@@ -1157,13 +1120,9 @@
     <!-- STATE 4: REVEAL -->
     <div class="screen" id="reveal-screen">
         <img class="reveal-image" id="reveal-image" src="" alt="Your masterpiece">
-        <h2 class="reveal-text" id="reveal-text">✨ Here's your page! ✨</h2>
+        <h2 class="reveal-text" id="reveal-text">✨ Here's your coloring page! ✨</h2>
         <p class="reveal-subtitle" id="reveal-subtitle"></p>
-        <div class="button-group" id="button-group">
-            <button class="action-button print" onclick="handlePrint()">🖨️ Print my page</button>
-            <button class="action-button email" onclick="handleEmail()">📧 Email it to me</button>
-        </div>
-        <p class="print-success-msg" id="print-success-msg">🎉 Printing now — go grab it!</p>
+        <p class="print-success-msg" id="print-success-msg">🖨️ Printing now — head to the coloring station and fill it in! 🎨</p>
     </div>
 
     <!-- Printer panel — slides in from right during print -->
@@ -1239,6 +1198,7 @@
         let isInRevealMode = false; // Lock to prevent going back to conversation after reveal
         let lastSpeaker = 'robot';
         let generatingSublabelTimeout = null;
+        let generatingTimeoutId = null;
 
         const LOADING_PHRASES = [
             "Doing hard yakka...",
@@ -1298,6 +1258,9 @@
         function showIdle() {
             hideAllScreens();
             resetPrintState();
+            if (generatingTimeoutId) { clearTimeout(generatingTimeoutId); generatingTimeoutId = null; }
+            if (generatingSublabelTimeout) { clearTimeout(generatingSublabelTimeout); generatingSublabelTimeout = null; }
+            if (phraseInterval) { clearInterval(phraseInterval); phraseInterval = null; }
             document.getElementById('idle-screen').classList.add('active');
         }
 
@@ -1355,6 +1318,13 @@
                 document.getElementById('generating-sublabel').textContent = 'Almost there... good things take time! 🎨';
             }, 20000);
 
+            // Safety timeout: fall back to idle after 60 seconds if reveal never arrives
+            if (generatingTimeoutId) clearTimeout(generatingTimeoutId);
+            generatingTimeoutId = setTimeout(() => {
+                console.warn('Generating timeout: no reveal received after 60s, returning to idle');
+                showIdle();
+            }, 60000);
+
             // Restart coloring book animation by cloning inner group
             const svg = document.querySelector('.coloring-book-inner');
             if (svg) {
@@ -1382,6 +1352,10 @@
                 clearTimeout(generatingSublabelTimeout);
                 generatingSublabelTimeout = null;
             }
+            if (generatingTimeoutId) {
+                clearTimeout(generatingTimeoutId);
+                generatingTimeoutId = null;
+            }
 
             // Camera flash effect
             document.body.style.background = 'var(--lemon)';
@@ -1404,6 +1378,9 @@
 
             // Trigger confetti burst almost immediately
             setTimeout(triggerConfettiBurst, 800);
+
+            // Auto-print after 10 seconds — gives the visitor time to see the image
+            setTimeout(handlePrint, 10000);
         }
 
         // Helper functions
@@ -1471,26 +1448,21 @@
 
         // Action button handlers (stubs for backend)
         function handlePrint() {
-            console.log('Print action triggered');
-
             const img          = document.getElementById('reveal-image');
             const printerPanel = document.getElementById('printer-panel');
             const revealText   = document.getElementById('reveal-text');
             const subtitle     = document.getElementById('reveal-subtitle');
-            const btnGroup     = document.getElementById('button-group');
             const successMsg   = document.getElementById('print-success-msg');
 
             // Slide printer panel in from the right
             printerPanel.classList.add('visible');
 
-            // Fade out text and buttons
+            // Fade out title text
             setTimeout(() => {
                 revealText.style.transition = 'opacity 0.4s';
                 revealText.style.opacity = '0';
                 subtitle.style.transition = 'opacity 0.4s';
                 subtitle.style.opacity = '0';
-                btnGroup.style.transition = 'opacity 0.4s';
-                btnGroup.style.opacity = '0';
             }, 400);
 
             // Feed image into printer
@@ -1498,7 +1470,7 @@
                 img.classList.add('printing');
             }, 600);
 
-            // Show success message once image is off-screen
+            // Show "head to the coloring station" message once image is off-screen
             setTimeout(() => {
                 successMsg.classList.add('visible');
             }, 2500);
@@ -1509,7 +1481,6 @@
             const printerPanel = document.getElementById('printer-panel');
             const revealText   = document.getElementById('reveal-text');
             const subtitle     = document.getElementById('reveal-subtitle');
-            const btnGroup     = document.getElementById('button-group');
             const successMsg   = document.getElementById('print-success-msg');
 
             img.classList.remove('printing');
@@ -1519,14 +1490,8 @@
             revealText.style.transition = '';
             subtitle.style.opacity = '';
             subtitle.style.transition = '';
-            btnGroup.style.opacity = '';
-            btnGroup.style.transition = '';
         }
 
-        function handleEmail() {
-            console.log('Email action triggered');
-            alert('Email functionality will be connected to backend');
-        }
 
         // Demo functions for testing
         function demoConversation() {

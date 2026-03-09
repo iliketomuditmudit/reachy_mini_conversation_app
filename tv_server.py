@@ -4,9 +4,10 @@ import asyncio
 import uvicorn
 import httpx
 from fastapi import FastAPI, WebSocket, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pathlib import Path
 import logging
+import os
 
 # Create a local broadcaster for this server
 import sys
@@ -20,6 +21,40 @@ app = FastAPI()
 
 # Create a local broadcaster instance for this server
 tv_broadcaster = TVDisplayBroadcaster()
+
+IMAGES_DIR = Path(__file__).parent / "src" / "reachy_mini_conversation_app" / "profiles" / "gumball_reflection" / "generated_images"
+
+@app.get("/gallery")
+async def serve_gallery():
+    """Serve the gallery HTML page."""
+    gallery_path = Path(__file__).parent / "gallery.html"
+    if gallery_path.exists():
+        return FileResponse(gallery_path)
+    return {"error": "Gallery file not found"}
+
+@app.get("/images")
+async def list_images():
+    """Return a JSON list of generated images sorted by creation time (newest first)."""
+    if not IMAGES_DIR.exists():
+        return JSONResponse([])
+    items = []
+    for f in IMAGES_DIR.glob("*.png"):
+        stat = f.stat()
+        items.append({
+            "filename": f.name,
+            "url": f"/images/{f.name}",
+            "created_at_unix": int(stat.st_mtime),
+        })
+    items.sort(key=lambda x: x["created_at_unix"], reverse=True)
+    return JSONResponse(items)
+
+@app.get("/images/{filename}")
+async def serve_image(filename: str):
+    """Serve an individual image file."""
+    img_path = IMAGES_DIR / filename
+    if img_path.exists() and img_path.suffix == ".png":
+        return FileResponse(img_path, media_type="image/png")
+    return JSONResponse({"error": "Image not found"}, status_code=404)
 
 @app.get("/")
 async def serve_tv_display():

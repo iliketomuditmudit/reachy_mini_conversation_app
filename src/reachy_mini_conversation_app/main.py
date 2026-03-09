@@ -24,10 +24,23 @@ from reachy_mini_conversation_app.utils import (
 )
 
 
+# Server-side conversation history — persists across Gradio state resets and
+# WebRTC reconnects so messages never disappear mid-conversation.
+_chat_history: List[Dict[str, Any]] = []
+
+
 def update_chatbot(chatbot: List[Dict[str, Any]], response: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Update the chatbot with AdditionalOutputs."""
-    chatbot.append(response)
-    return chatbot
+    """Append *response* to the persistent server-side history and return it.
+
+    Using a module-level list guarantees that messages are never lost when
+    Gradio resets the client-side chatbot state (e.g. on page refresh or
+    WebRTC reconnect).  Partial user transcripts (role='user_partial') are
+    skipped — the final 'user' transcript replaces them.
+    """
+    if response.get("role") == "user_partial":
+        return _chat_history
+    _chat_history.append(response)
+    return _chat_history
 
 
 def main() -> None:
@@ -128,6 +141,7 @@ def run(
     )
     logger.debug(f"Chatbot avatar images: {chatbot.avatar_images}")
 
+    logger.info("Using OpenAI Realtime API backend")
     handler = OpenaiRealtimeHandler(deps, gradio_mode=args.gradio, instance_path=instance_path)
 
     stream_manager: gr.Blocks | LocalStream | None = None
@@ -190,6 +204,7 @@ def run(
         @app.post("/reset")
         async def reset_session():
             """Hard-reset the OpenAI session for the next exhibition visitor."""
+            _chat_history.clear()
             await handler._restart_session()
             return {"status": "ok"}
 

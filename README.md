@@ -38,6 +38,23 @@ The app follows a layered architecture connecting the user, AI services, and rob
 > Before using this app, you need to install [Reachy Mini's SDK](https://github.com/pollen-robotics/reachy_mini/).<br>
 > Windows support is currently experimental and has not been extensively tested. Use with caution.
 
+### Reachy Mini Lite (USB / Wired)
+
+No additional system dependencies are required. Follow the standard setup below.
+
+### Reachy Mini Wireless — macOS prerequisites
+
+The wireless version streams audio and video over WebRTC using GStreamer. You must install the following system libraries before installing the Python extras:
+
+```bash
+brew install cairo pkg-config gobject-introspection \
+  gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad \
+  libnice-gstreamer
+```
+
+> [!NOTE]
+> `libnice-gstreamer` provides the ICE/STUN/TURN plugin required by WebRTC. Without it you will see `libnice elements are not available` at runtime.
+
 ### Using uv
 You can set up the project quickly using [uv](https://docs.astral.sh/uv/):
 
@@ -118,9 +135,40 @@ Some wheels (e.g. PyTorch) are large and require compatible CUDA or CPU builds�
 
 Activate your virtual environment, ensure the Reachy Mini robot (or simulator) is reachable, then launch:
 
-```bash
-reachy-mini-conversation-app
-```
+### Reachy Mini Lite (USB / Wired)
+
+1. Start the daemon in a terminal (or use the desktop app):
+   ```bash
+   reachy-mini-daemon
+   ```
+2. In a separate terminal, run the app:
+   ```bash
+   reachy-mini-conversation-app
+   ```
+
+### Reachy Mini Wireless
+
+The daemon runs automatically on the robot's Raspberry Pi — **do not** run `reachy-mini-daemon` on your Mac.
+
+1. **First boot — connect the robot to Wi-Fi:** Power on the robot, connect your computer to the `reachy-mini-ap` hotspot (password: `reachy-mini`), then open `http://reachy-mini.local:8000/settings` and enter your Wi-Fi credentials.
+
+2. **Start the robot's daemon** (required after each power cycle):
+   - Open the dashboard at `http://reachy-mini.local:8000` and click to start the robot, **or**
+   - Run from a terminal:
+     ```bash
+     curl -X POST "http://reachy-mini.local:8000/api/daemon/start?wake_up=true"
+     ```
+
+3. **Run the app** from your Mac (same Wi-Fi network as the robot):
+   ```bash
+   reachy-mini-conversation-app
+   ```
+
+   If multicast discovery doesn't work on your network (connection times out), specify the robot's IP directly via the `REACHY_MINI_ENDPOINT` environment variable:
+   ```bash
+   REACHY_MINI_ENDPOINT=tcp/<ROBOT_IP>:7447 reachy-mini-conversation-app
+   ```
+   You can find the robot's IP by running `ping reachy-mini.local` or checking the dashboard settings page.
 
 By default, the app runs in console mode for direct audio interaction. Use the `--gradio` flag to launch a web UI served locally at http://127.0.0.1:7860/ (required when running in simulation mode). With a camera attached, vision is handled by the gpt-realtime model when the camera tool is used. For local vision processing, use the `--local-vision` flag to process frames periodically using the SmolVLM2 model. Additionally, you can enable face tracking via YOLO or MediaPipe pipelines depending on the extras you installed.
 
@@ -162,12 +210,19 @@ By default, the app runs in console mode for direct audio interaction. Use the `
 
 ### Troubleshooting
 
-- Timeout error:
-If you get an error like this:
-  ```bash
+- **Timeout error:**
+  ```
   TimeoutError: Timeout while waiting for connection with the server.
   ```
-It probably means that the Reachy Mini's daemon isn't running. Install [Reachy Mini's SDK](https://github.com/pollen-robotics/reachy_mini/) and start the daemon.
+  - **Lite (USB):** The daemon isn't running. Start it with `reachy-mini-daemon`.
+  - **Wireless:** The robot's daemon hasn't been started yet. Open `http://reachy-mini.local:8000` and start the robot, or run `curl -X POST "http://reachy-mini.local:8000/api/daemon/start?wake_up=true"`.
+  - **Wireless — network discovery fails:** Some routers block multicast UDP. Set `REACHY_MINI_ENDPOINT=tcp/<ROBOT_IP>:7447` to bypass discovery and connect directly.
+
+- **`libnice elements are not available` (macOS):**
+  Install the missing GStreamer plugin: `brew install libnice-gstreamer`.
+
+- **`TypeError: Argument 1 does not allow None as a value` on macOS:**
+  This is a GStreamer/PyGObject compatibility issue. In the installed SDK, change `Gst.init(None)` to `Gst.init([])` in `reachy_mini/media/webrtc_client_gstreamer.py`.
 
 ## LLM tools exposed to the assistant
 

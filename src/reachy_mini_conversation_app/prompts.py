@@ -13,6 +13,7 @@ PROFILES_DIRECTORY = Path(__file__).parent / "profiles"
 PROMPTS_LIBRARY_DIRECTORY = Path(__file__).parent / "prompts"
 INSTRUCTIONS_FILENAME = "instructions.txt"
 VOICE_FILENAME = "voice.txt"
+INITIAL_TRIGGER_FILENAME = "initial_trigger.txt"
 
 
 def _expand_prompt_includes(content: str) -> str:
@@ -102,3 +103,23 @@ def get_session_voice(default: str = "cedar") -> str:
     except Exception:
         pass
     return default
+
+
+def get_initial_trigger() -> str | None:
+    """Return the text of initial_trigger.txt for the active profile, or None.
+
+    When present, this text is injected as an initial user message right after
+    the session is set up, prompting the model to execute its opening protocol
+    without waiting for the human to speak first.
+    """
+    profile = config.REACHY_MINI_CUSTOM_PROFILE
+    if not profile:
+        return None
+    try:
+        trigger_file = PROFILES_DIRECTORY / profile / INITIAL_TRIGGER_FILENAME
+        if trigger_file.exists():
+            text = trigger_file.read_text(encoding="utf-8").strip()
+            return text or None
+    except Exception as e:
+        logger.warning("Failed to read initial_trigger.txt for profile '%s': %s", profile, e)
+    return None
