@@ -1,287 +1,165 @@
----
-title: Reachy Mini Conversation App
-emoji: 🎤
-colorFrom: red
-colorTo: blue
-sdk: static
-pinned: false
-short_description: Talk with Reachy Mini !
-suggested_storage: large
-tags:
- - reachy_mini
- - reachy_mini_python_app
+# The Idea Capsule Machine
+
+An interactive art installation built on the [Reachy Mini](https://github.com/pollen-robotics/reachy_mini/) robot. Visitors pull a capsule from a gumball machine, read the prompt inside to Reachy, have a short guided reflective conversation, and receive a personalized AI-generated coloring page as a keepsake.
+
+This repo is a fork of [pollen-robotics/reachy_mini_conversation_app](https://github.com/pollen-robotics/reachy_mini_conversation_app), extended with:
+
+- **`gumball_reflection` profile** — a custom personality and conversation flow for the installation
+- **`generate_image` tool** — calls Google Gemini to produce a coloring-book-style image from each visitor's reflection
+- **TV display system** — a fullscreen audience-facing visualization served on a secondary display
+
 ---
 
-# Reachy Mini conversation app
+## How it works
 
-Conversational app for the Reachy Mini robot combining OpenAI's realtime APIs, vision pipelines, and choreographed motion libraries.
+1. Visitor pulls a pink capsule from the gumball machine
+2. Reachy greets them and asks them to open the capsule and read the prompt inside
+3. Reachy asks up to 3 short reflective questions based on the prompt
+4. After the third answer, Reachy delivers a warm closing reflection, then calls Gemini to generate a personalized coloring page
+5. The TV display animates through four states — idle, conversation, generating, reveal — in real time
+6. The visitor takes their coloring page to a coloring station
 
-![Reachy Mini Dance](docs/assets/reachy_mini_dance.gif)
+---
 
-## Architecture
+## System architecture
 
-The app follows a layered architecture connecting the user, AI services, and robot hardware:
+```
+┌─────────────────────────────────────────┐
+│  Main App (Port 7860)                   │
+│  - Gradio voice interface               │
+│  - OpenAI Realtime API                  │
+│  - Reachy Mini robot control            │
+│  - Broadcasts events → TV server        │
+└──────────────┬──────────────────────────┘
+               │ HTTP POST /broadcast
+               ▼
+┌─────────────────────────────────────────┐
+│  TV Server (Port 8001)                  │
+│  - Serves tv_display.html               │
+│  - WebSocket endpoint                   │
+│  - Forwards events to browser clients   │
+└──────────────┬──────────────────────────┘
+               │ WebSocket
+               ▼
+┌─────────────────────────────────────────┐
+│  TV Display (Browser, secondary screen) │
+│  - Four animated states                 │
+│  - Real-time transcript bubbles         │
+│  - Image reveal with confetti           │
+└─────────────────────────────────────────┘
+```
 
-<p align="center">
-  <img src="docs/assets/conversation_app_arch.svg" alt="Architecture Diagram" width="600"/>
-</p>
+### TV display states
 
-## Overview
-- Real-time audio conversation loop powered by the OpenAI realtime API and `fastrtc` for low-latency streaming.
-- Vision processing uses gpt-realtime by default (when camera tool is used), with optional local vision processing using SmolVLM2 model running on-device (CPU/GPU/MPS) via `--local-vision` flag.
-- Layered motion system queues primary moves (dances, emotions, goto poses, breathing) while blending speech-reactive wobble and face-tracking.
-- Async tool dispatch integrates robot motion, camera capture, and optional face-tracking capabilities through a Gradio web UI with live transcripts.
+| State | When | What the audience sees |
+|-------|------|------------------------|
+| **Idle** | No active conversation | Animated gumball machine, floating confetti, pulsing title |
+| **Conversation** | Visitor is talking | Real-time speech bubbles (purple = Reachy, pink = visitor) |
+| **Generating** | Gemini is creating the image | Animated robot workers, rotating whimsical loading phrases |
+| **Reveal** | Image is ready | Dramatic zoom-in reveal, confetti burst |
+
+---
 
 ## Installation
 
-> [!IMPORTANT]
-> Before using this app, you need to install [Reachy Mini's SDK](https://github.com/pollen-robotics/reachy_mini/).<br>
-> Windows support is currently experimental and has not been extensively tested. Use with caution.
+### Prerequisites
 
-### Reachy Mini Lite (USB / Wired)
+- Python 3.12+
+- [Reachy Mini SDK](https://github.com/pollen-robotics/reachy_mini/)
+- OpenAI API key (for GPT Realtime voice)
+- Google Gemini API key (for image generation)
 
-No additional system dependencies are required. Follow the standard setup below.
-
-### Reachy Mini Wireless — macOS prerequisites
-
-The wireless version streams audio and video over WebRTC using GStreamer. You must install the following system libraries before installing the Python extras:
+### Setup
 
 ```bash
-brew install cairo pkg-config gobject-introspection \
-  gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad \
-  libnice-gstreamer
-```
+git clone https://github.com/iliketomuditmudit/reachy_mini_conversation_app.git
+cd reachy_mini_conversation_app
 
-> [!NOTE]
-> `libnice-gstreamer` provides the ICE/STUN/TURN plugin required by WebRTC. Without it you will see `libnice elements are not available` at runtime.
-
-### Using uv
-You can set up the project quickly using [uv](https://docs.astral.sh/uv/):
-
-```bash
-uv venv --python 3.12.1  # Create a virtual environment with Python 3.12.1
+uv venv --python 3.12.1
 source .venv/bin/activate
 uv sync
 ```
 
-> [!NOTE]
-> To reproduce the exact dependency set from this repo's `uv.lock`, run `uv sync` with `--locked` (or `--frozen`). This ensures `uv` installs directly from the lockfile without re-resolving or updating any versions.
-
-To include optional dependencies:
-```
-uv sync --extra reachy_mini_wireless # For wireless Reachy Mini with GStreamer support
-uv sync --extra local_vision         # For local PyTorch/Transformers vision
-uv sync --extra yolo_vision          # For YOLO-based vision
-uv sync --extra mediapipe_vision     # For MediaPipe-based vision
-uv sync --extra all_vision           # For all vision features
-```
-
-You can combine extras or include dev dependencies:
-```
-uv sync --extra all_vision --group dev
-```
-
-### Using pip
+Or with pip:
 
 ```bash
-python -m venv .venv # Create a virtual environment
+python -m venv .venv
 source .venv/bin/activate
 pip install -e .
+pip install uvicorn httpx  # required for the TV server
 ```
 
-Install optional extras depending on the feature set you need:
+### Configure API keys
 
 ```bash
-# Wireless Reachy Mini support
-pip install -e .[reachy_mini_wireless]
-
-# Vision stacks (choose at least one if you plan to run face tracking)
-pip install -e .[local_vision]
-pip install -e .[yolo_vision]
-pip install -e .[mediapipe_vision]
-pip install -e .[all_vision]        # installs every vision extra
-
-# Tooling for development workflows
-pip install -e .[dev]
+cp .env.example .env
 ```
 
-Some wheels (e.g. PyTorch) are large and require compatible CUDA or CPU builds—make sure your platform matches the binaries pulled in by each extra.
-
-## Optional dependency groups
-
-| Extra | Purpose | Notes |
-|-------|---------|-------|
-| `reachy_mini_wireless` | Wireless Reachy Mini with GStreamer support. | Required for wireless versions of Reachy Mini, includes GStreamer dependencies.
-| `local_vision` | Run the local VLM (SmolVLM2) through PyTorch/Transformers. | GPU recommended; ensure compatible PyTorch builds for your platform.
-| `yolo_vision` | YOLOv8 tracking via `ultralytics` and `supervision`. | CPU friendly; supports the `--head-tracker yolo` option.
-| `mediapipe_vision` | Lightweight landmark tracking with MediaPipe. | Works on CPU; enables `--head-tracker mediapipe`.
-| `all_vision` | Convenience alias installing every vision extra. | Install when you want the flexibility to experiment with every provider.
-| `dev` | Developer tooling (`pytest`, `ruff`). | Add on top of either base or `all_vision` environments.
-
-## Configuration
-
-1. Copy `.env.example` to `.env`.
-2. Fill in the required values, notably the OpenAI API key.
-
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | Required. Grants access to the OpenAI realtime endpoint.
-| `MODEL_NAME` | Override the realtime model (defaults to `gpt-realtime`). Used for both conversation and vision (unless `--local-vision` flag is used).
-| `HF_HOME` | Cache directory for local Hugging Face downloads (only used with `--local-vision` flag, defaults to `./cache`).
-| `HF_TOKEN` | Optional token for Hugging Face models (only used with `--local-vision` flag, falls back to `huggingface-cli login`).
-| `LOCAL_VISION_MODEL` | Hugging Face model path for local vision processing (only used with `--local-vision` flag, defaults to `HuggingFaceTB/SmolVLM2-2.2B-Instruct`).
-
-## Running the app
-
-Activate your virtual environment, ensure the Reachy Mini robot (or simulator) is reachable, then launch:
-
-### Reachy Mini Lite (USB / Wired)
-
-1. Start the daemon in a terminal (or use the desktop app):
-   ```bash
-   reachy-mini-daemon
-   ```
-2. In a separate terminal, run the app:
-   ```bash
-   reachy-mini-conversation-app
-   ```
-
-### Reachy Mini Wireless
-
-The daemon runs automatically on the robot's Raspberry Pi — **do not** run `reachy-mini-daemon` on your Mac.
-
-1. **First boot — connect the robot to Wi-Fi:** Power on the robot, connect your computer to the `reachy-mini-ap` hotspot (password: `reachy-mini`), then open `http://reachy-mini.local:8000/settings` and enter your Wi-Fi credentials.
-
-2. **Start the robot's daemon** (required after each power cycle):
-   - Open the dashboard at `http://reachy-mini.local:8000` and click to start the robot, **or**
-   - Run from a terminal:
-     ```bash
-     curl -X POST "http://reachy-mini.local:8000/api/daemon/start?wake_up=true"
-     ```
-
-3. **Run the app** from your Mac (same Wi-Fi network as the robot):
-   ```bash
-   reachy-mini-conversation-app
-   ```
-
-   If multicast discovery doesn't work on your network (connection times out), specify the robot's IP directly via the `REACHY_MINI_ENDPOINT` environment variable:
-   ```bash
-   REACHY_MINI_ENDPOINT=tcp/<ROBOT_IP>:7447 reachy-mini-conversation-app
-   ```
-   You can find the robot's IP by running `ping reachy-mini.local` or checking the dashboard settings page.
-
-By default, the app runs in console mode for direct audio interaction. Use the `--gradio` flag to launch a web UI served locally at http://127.0.0.1:7860/ (required when running in simulation mode). With a camera attached, vision is handled by the gpt-realtime model when the camera tool is used. For local vision processing, use the `--local-vision` flag to process frames periodically using the SmolVLM2 model. Additionally, you can enable face tracking via YOLO or MediaPipe pipelines depending on the extras you installed.
-
-### CLI options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--head-tracker {yolo,mediapipe}` | `None` | Select a face-tracking backend when a camera is available. YOLO is implemented locally, MediaPipe comes from the `reachy_mini_toolbox` package. Requires the matching optional extra. |
-| `--no-camera` | `False` | Run without camera capture or face tracking. |
-| `--local-vision` | `False` | Use local vision model (SmolVLM2) for periodic image processing instead of gpt-realtime vision. Requires `local_vision` extra to be installed. |
-| `--gradio` | `False` | Launch the Gradio web UI. Without this flag, runs in console mode. Required when running in simulation mode. |
-| `--debug` | `False` | Enable verbose logging for troubleshooting. |
-
-
-### Examples
-- Run on hardware with MediaPipe face tracking:
-
-  ```bash
-  reachy-mini-conversation-app --head-tracker mediapipe
-  ```
-
-- Run with local vision processing (requires `local_vision` extra):
-
-  ```bash
-  reachy-mini-conversation-app --local-vision
-  ```
-
-- Disable the camera pipeline (audio-only conversation):
-
-  ```bash
-  reachy-mini-conversation-app --no-camera
-  ```
-
-- Run with Gradio web interface:
-
-  ```bash
-  reachy-mini-conversation-app --gradio
-  ```
-
-### Troubleshooting
-
-- **Timeout error:**
-  ```
-  TimeoutError: Timeout while waiting for connection with the server.
-  ```
-  - **Lite (USB):** The daemon isn't running. Start it with `reachy-mini-daemon`.
-  - **Wireless:** The robot's daemon hasn't been started yet. Open `http://reachy-mini.local:8000` and start the robot, or run `curl -X POST "http://reachy-mini.local:8000/api/daemon/start?wake_up=true"`.
-  - **Wireless — network discovery fails:** Some routers block multicast UDP. Set `REACHY_MINI_ENDPOINT=tcp/<ROBOT_IP>:7447` to bypass discovery and connect directly.
-
-- **`libnice elements are not available` (macOS):**
-  Install the missing GStreamer plugin: `brew install libnice-gstreamer`.
-
-- **`TypeError: Argument 1 does not allow None as a value` on macOS:**
-  This is a GStreamer/PyGObject compatibility issue. In the installed SDK, change `Gst.init(None)` to `Gst.init([])` in `reachy_mini/media/webrtc_client_gstreamer.py`.
-
-## LLM tools exposed to the assistant
-
-| Tool | Action | Dependencies |
-|------|--------|--------------|
-| `move_head` | Queue a head pose change (left/right/up/down/front). | Core install only. |
-| `camera` | Capture the latest camera frame and send it to gpt-realtime for vision analysis. | Requires camera worker; uses gpt-realtime vision by default. |
-| `head_tracking` | Enable or disable face-tracking offsets (not facial recognition - only detects and tracks face position). | Camera worker with configured head tracker. |
-| `dance` | Queue a dance from `reachy_mini_dances_library`. | Core install only. |
-| `stop_dance` | Clear queued dances. | Core install only. |
-| `play_emotion` | Play a recorded emotion clip via Hugging Face assets. | Needs `HF_TOKEN` for the recorded emotions dataset. |
-| `stop_emotion` | Clear queued emotions. | Core install only. |
-| `do_nothing` | Explicitly remain idle. | Core install only. |
-
-## Using custom profiles
-Create custom profiles with dedicated instructions and enabled tools! 
-
-Set `REACHY_MINI_CUSTOM_PROFILE=<name>` to load `src/reachy_mini_conversation_app/profiles/<name>/` (see `.env.example`). If unset, the `default` profile is used.
-
-Each profile requires two files: `instructions.txt` (prompt text) and `tools.txt` (list of allowed tools), and optionally contains custom tools implementations.
-
-### Custom instructions
-Write plain-text prompts in `instructions.txt`. To reuse shared prompt pieces, add lines like:
-```
-[passion_for_lobster_jokes]
-[identities/witty_identity]
-```
-Each placeholder pulls the matching file under `src/reachy_mini_conversation_app/prompts/` (nested paths allowed). See `src/reachy_mini_conversation_app/profiles/example/` for a reference layout.
-
-### Enabling tools
-List enabled tools in `tools.txt`, one per line; prefix with `#` to comment out. For example:
+Edit `.env`:
 
 ```
-play_emotion
-# move_head
-
-# My custom tool defined locally
-sweep_look
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...
+REACHY_MINI_CUSTOM_PROFILE=gumball_reflection
 ```
-Tools are resolved first from Python files in the profile folder (custom tools), then from the shared library `src/reachy_mini_conversation_app/tools/` (e.g., `dance`, `head_tracking`). 
 
-### Custom tools
-On top of built-in tools found in the shared library, you can implement custom tools specific to your profile by adding Python files in the profile folder. 
-Custom tools must subclass `reachy_mini_conversation_app.tools.core_tools.Tool` (see `profiles/example/sweep_look.py`).
+---
 
-### Edit personalities from the UI
-When running with `--gradio`, open the “Personality” accordion:
-- Select among available profiles (folders under `src/reachy_mini_conversation_app/profiles/`) or the built‑in default.
-- Click “Apply” to update the current session instructions live.
-- Create a new personality by entering a name and instructions text; it stores files under `profiles/<name>/` and copies `tools.txt` from the `default` profile.
+## Running the installation
 
-Note: The “Personality” panel updates the conversation instructions. Tool sets are loaded at startup from `tools.txt` and are not hot‑reloaded.
+You need **two terminals** running simultaneously.
 
+### Terminal 1 — Main conversation app
 
-## Development workflow
-- Install the dev group extras: `uv sync --group dev` or `pip install -e .[dev]`.
-- Run formatting and linting: `ruff check .`.
-- Execute the test suite: `pytest`.
-- When iterating on robot motions, keep the control loop responsive => offload blocking work using the helpers in `tools.py`.
+```bash
+source .venv/bin/activate
+python -m reachy_mini_conversation_app --gradio
+```
+
+Opens the voice interface at `http://localhost:7860`.
+
+### Terminal 2 — TV display server
+
+```bash
+source .venv/bin/activate
+python tv_server.py
+```
+
+Opens the audience display at `http://localhost:8001`. Press F11 for fullscreen on the TV.
+
+---
+
+## Files added in this fork
+
+| File | Purpose |
+|------|---------|
+| `tv_server.py` | Standalone FastAPI server for the TV display |
+| `tv_display.html` | Full-screen audience visualization (single HTML file) |
+| `src/.../tv_broadcaster.py` | WebSocket connection manager |
+| `src/.../profiles/gumball_reflection/` | Personality, conversation flow, and `generate_image` tool |
+| `TV_DISPLAY_README.md` | Operator setup guide for the TV display |
+
+---
+
+## Troubleshooting
+
+**TV display shows "WebSocket disconnected"**
+- Make sure `tv_server.py` is running
+- Check browser console (F12) for errors
+- Test manually: `curl -X POST http://localhost:8001/broadcast -H "Content-Type: application/json" -d '{"type":"idle","data":{}}'`
+
+**Image generation fails**
+- Check that `GEMINI_API_KEY` is set in `.env`
+- The tool uses `gemini-3.1-flash-image-preview`
+
+**Robot connection timeout**
+- Lite (USB): run `reachy-mini-daemon` in a separate terminal first
+- Wireless: start the daemon via `http://reachy-mini.local:8000`
+
+For the full upstream troubleshooting guide, see [TV_DISPLAY_README.md](TV_DISPLAY_README.md).
+
+---
 
 ## License
-Apache 2.0
+
+Apache 2.0 — same as the upstream repository.
